@@ -1,6 +1,6 @@
 <?php 
 
-// This file is part of the Mapstagram plugin for WordPress
+// This file is part of the Karten plugin for WordPress
 //
 // Copyright (c) 2012-2013 Craig Freeman. All rights reserved.
 // http://craigfreeman.net

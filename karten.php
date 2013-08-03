@@ -1,13 +1,13 @@
 <?php
 /*
-Plugin Name: Mapstagram
+Plugin Name: Karten
 Description: Display Instagram photos on a Google Maps map
-Version: 0.5
+Version: 0.1
 Author: Craig Freeman
 Author URI: http://www.craigfreeman.net
 */
 
-// This file is part of the Mapstagram plugin for WordPress
+// This file is part of the Karten plugin for WordPress
 //
 // Copyright (c) 2012-2013 Craig Freeman. All rights reserved.
 // http://craigfreeman.net
