@@ -1,5 +1,5 @@
-wp-mapstagram
-=============
+Smokey Treat
+============
 
 A WordPress plugin to plot Instagram posts to a Google Maps maps, provided the post includes coordinates. This utilizes both the Google Maps v3 API and the Instagram API.
 
