@@ -1,0 +1,2 @@
+<!-- Map -->
+<div id="map_canvas"></div>
