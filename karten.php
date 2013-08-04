@@ -21,27 +21,251 @@ Author URI: http://www.craigfreeman.net
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
 // **********************************************************************
 
-// Google Maps API Key
-define("KEY", "AIzaSyD-BbP0VKgvXUE408A1ErOUOLXXpaaKYHw");
+// Theme version
+define('KTN_THEME_VER', '0.1');
 
-// Enqueue scripts/styles in template header
-function cf_scripts() {
-	if(is_category('denver')) {
-		// Add appropriate code to header
-		wp_register_script( 'cf_location_google_maps', 'https://maps.googleapis.com/maps/api/js?key='.KEY.'&sensor=false', null, null, false);
-		wp_enqueue_script( 'cf_location_google_maps' );
-	
-		wp_register_script( 'cf_location_script', plugins_url('/scripts.js', __FILE__), array('jquery', 'cf_location_google_maps'), null, false);
-		wp_enqueue_script( 'cf_location_script' );
-	
-		// Stylesheets	
-		wp_register_style( 'cf_location_style', plugins_url('/style.css', __FILE__) );
-		wp_enqueue_style( 'cf_location_style' );
+// Options page
+function ktn_options_setup() {
+	add_options_page('Karten Settings', 'Karten', 'manage_options', 'ktn_opts', 'ktn_options_view');
+}
+
+add_action('admin_menu', 'ktn_options_setup'); 
+
+// Options page view
+function ktn_options_view() {
+	?>
+	<div class="wrap">
+		<h2>Karten Settings</h2>
+		<form method="post" action="options.php">
+			<?php wp_nonce_field('ktn_options_nonce') ?>
+			<p>
+				<strong>Google Maps v3 API Key</strong><br />
+				<input type="text" name="ktn_gmapsapi" size="45" value="<?php echo get_option('ktn_gmapsapi'); ?>" />
+			</p>
+			<p>
+				<strong>Instagram API Access Token</strong><br />
+				<input type="text" name="ktn_instagramapi" size="45" value="<?php echo get_option('ktn_instagramapi'); ?>" />
+			</p>
+			<p>
+				<input type="submit" name="Submit" class="button button-primary" value="Save Settings" />
+			</p>
+			<input type="hidden" name="action" value="update" />
+			<input type="hidden" name="page_options" value="ktn_gmapsapi,ktn_instagramapi" />
+		</form>  
+	</div>  
+	<?php  
+}
+
+// Post meta setup
+function ktn_meta_setup() {
+	add_action( 'add_meta_boxes', 'ktn_add_meta_box' );
+	add_action( 'save_post', 'ktn_save_meta', 10, 2 );
+}
+
+add_action( 'load-post.php', 'ktn_meta_setup' );
+add_action( 'load-post-new.php', 'ktn_meta_setup' );
+
+// Add post meta box
+function ktn_add_meta_box() {
+	// TO DO: Make available for all or select post types
+	// Posts
+	add_meta_box(
+		'ktn_meta',
+		esc_html__( 'Karten Meta', 'ktn' ),
+		'ktn_meta_box_view',
+		'post',
+		'normal',
+		'default'
+	);
+	// Pages
+	add_meta_box(
+		'ktn_meta',
+		esc_html__( 'Karten Meta', 'ktn' ),
+		'ktn_meta_box_view',
+		'page',
+		'normal',
+		'default'
+	);
+}
+
+// Post meta view
+// TO DO: Make users, hashtags repeater blocks. Make start, end dates date-pickers. Add tooltips.
+function ktn_meta_box_view( $object, $box ) {
+	wp_nonce_field( basename( __FILE__ ), 'ktn_meta_nonce' );
+
+	?>
+	<p>If you would like to display an Instagram map on this page, fill out the form below.</p>
+	<p>
+		<label class="req" for="ktn-meta-users"><?php _e( 'User', 'ktn' ); ?></label>
+		<br />
+		<input class="widefat" type="text" name="ktn-meta-users" id="ktn-meta-users" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_users', true ) ); ?>" size="30" />
+	</p>
+	<p>
+		<label class="req" for="ktn-meta-hashtags"><?php _e( 'Hashtag (don\'t include #)', 'ktn' ); ?></label>
+		<br />
+		<input class="widefat" type="text" name="ktn-meta-hashtags" id="ktn-meta-hashtags" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_hashtags', true ) ); ?>" size="30" />
+	</p>
+	<!-- TO DO: Make date picker -->
+	<p>
+		<label class="req" for="ktn-meta-start-date"><?php _e( 'Start Date', 'ktn' ); ?></label>
+		<br />
+		<input class="widefat" type="text" name="ktn-meta-start-date" id="ktn-meta-start-date" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_start_date', true ) ); ?>" size="30" />
+	</p>
+	<!-- TO DO: Make date picker -->
+	<p>
+		<label class="req" for="ktn-meta-end-date"><?php _e( 'End Date', 'ktn' ); ?></label>
+		<br />
+		<input class="widefat" type="text" name="ktn-meta-end-date" id="ktn-meta-end-date" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_end_date', true ) ); ?>" size="30" />
+	</p>
+	<p>
+		<label class="req" for="ktn-meta-start-addr"><?php _e( 'Start Address', 'ktn' ); ?></label>
+		<br />
+		<input class="widefat" type="text" name="ktn-meta-start-addr" id="ktn-meta-start-addr" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_start_addr', true ) ); ?>" size="30" />
+	</p>
+	<p>
+		<label class="req" for="ktn-meta-end-addr"><?php _e( 'End Address', 'ktn' ); ?></label>
+		<br />
+		<input class="widefat" type="text" name="ktn-meta-end-addr" id="ktn-meta-end-addr" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_end_addr', true ) ); ?>" size="30" />
+	</p>
+	<p>
+		<label class="req" for="ktn-meta-max-posts"><?php _e( 'Maximum Number of Posts', 'ktn' ); ?></label>
+		<br />
+		<input class="widefat" type="text" name="ktn-meta-max-posts" id="ktn-meta-max-posts" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_max_posts', true ) ); ?>" size="10" />
+	</p>
+	<p>
+		<label class="req" for="ktn-meta-iframe-width"><?php _e( 'Iframe Width', 'ktn' ); ?></label>
+		<br />
+		<input class="widefat" type="text" name="ktn-meta-iframe-width" id="ktn-meta-iframe-width" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_iframe_width', true ) ); ?>" size="10" />
+	</p>
+	<p>
+		<label class="req" for="ktn-meta-iframe-height"><?php _e( 'Iframe Height', 'ktn' ); ?></label>
+		<br />
+		<input class="widefat" type="text" name="ktn-meta-iframe-height" id="ktn-meta-iframe-height" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_iframe_height', true ) ); ?>" size="10" />
+	</p>
+	<p>
+		<label class="req" for="ktn-meta-iframe-max-width"><?php _e('Iframe Maximum Width', 'ktn'); ?></label>
+		<br />
+		<input class="widefat" type="text" name="ktn-meta-iframe-max-width" id="ktn-meta-iframe-max-width" value="<?php echo esc_attr(get_post_meta($object->ID, 'ktn_meta_iframe_max_width', true)); ?>" size="10" />
+	</p>
+	<?php 
+}
+
+// Save post meta
+function ktn_save_meta($post_id, $post) {
+	// Verify the nonce before proceeding
+	if (!isset($_POST['ktn_meta_nonce']) || !wp_verify_nonce($_POST['ktn_meta_nonce'], basename(__FILE__))) {
+		return $post_id;
+	}
+
+	// Get the post type object
+	$post_type = get_post_type_object($post->post_type);
+
+	// Check if the current user has permission to edit the post
+	if (!current_user_can($post_type->cap->edit_post, $post_id))
+		return $post_id;
+
+	// Get the posted data and sanitize it for use as an HTML class
+	$new_meta_value = (isset($_POST['smashing-post-class']) ? sanitize_html_class($_POST['smashing-post-class']) : '');
+
+	/* Get the meta key. */
+	$meta_key = 'smashing_post_class';
+
+	/* Get the meta value of the custom field key. */
+	$meta_value = get_post_meta( $post_id, $meta_key, true );
+
+	/* If a new meta value was added and there was no previous value, add it. */
+	if ( $new_meta_value && '' == $meta_value )
+		add_post_meta( $post_id, $meta_key, $new_meta_value, true );
+
+	/* If the new meta value does not match the old value, update it. */
+	elseif ( $new_meta_value && $new_meta_value != $meta_value )
+		update_post_meta( $post_id, $meta_key, $new_meta_value );
+
+	/* If there is no new meta value but an old value exists, delete it. */
+	elseif ( '' == $new_meta_value && $meta_value )
+		delete_post_meta( $post_id, $meta_key, $meta_value );
+}
+
+// Are the admin settings complete?
+function ktn_opts_set() {
+	// Google Maps API Key
+	if (get_option('ktn_gmapsapi')) {
+		define('KTN_GMAPS_KEY', get_option('ktn_gmapsapi'));
+	}
+	// Instagram API Access Token
+	if (get_option('ktn_instagramapi')) {
+		define('KTN_INSTAGRAM_TOKEN', get_option('ktn_instagramapi'));
+	}
+
+	if (defined('KTN_GMAPS_KEY') && defined('KTN_INSTAGRAM_TOKEN')) {
+		return true;
+	}
+	else {
+		return false;
 	}
 }
 
-add_action('wp_enqueue_scripts', 'cf_scripts');
+// Is there related meta on this page?
+function ktn_post_has_meta() {
+	global $post;
+	$page_id = $post(get_the_ID());
 
+	// Get meta
+}
+
+// Enqueue scripts/styles in template header
+function ktn_assets() {
+	// Is the page worthy of loading the assets? (Are options entered and is meta on the page?)
+	if (ktn_opts_set() && ktn_post_has_meta()) {
+		// Scripts
+		wp_enqueue_script( 'ktn_google_maps', 'https://maps.googleapis.com/maps/api/js?key='.KTN_GMAPS_KEY.'&sensor=false', array(), KTN_THEME_VER, false );
+		wp_enqueue_script( 'ktn_script', plugins_url('/scripts.js', __FILE__), array('jquery', 'ktn_google_maps', 'ktn_google_maps_old'), KTN_THEME_VER, true );
+
+		// Stylesheets	
+		wp_register_style( 'ktn_style', plugins_url('/style.css', __FILE__), array(), KTN_THEME_VER );
+		wp_enqueue_style( 'ktn_style' );
+	}
+}
+
+add_action('wp_enqueue_scripts', 'ktn_assets');
+
+/**
+ * DEPRECATED
+ **/
 function showMap() {
 	echo file_get_contents(dirname( __FILE__ ) . '/map-template.php'); 
 }
+
+/**
+ * Display a map
+ **/
+function ktn_show_map($args = false) {
+	// TO DO: Find proper way to handle args
+	if (!$args) {
+		// Defaults
+		$args = array(
+			'users' => array('openapple','pfflyer'), // array (or string?)
+			'hashtags' => array('move2012'), // array (or string?)
+			'start_date' => '', // undetermined
+			'end_date' => '', // undetermined
+			'max_posts' => 999, // int
+			'height' => 300, // px int % str
+			'width' => '100%', // px int or % str
+			'max_width' => 'auto', // auto str, px int or % str
+			'start_coord' => array(lat, long), // array(lat float, lng float)
+			'end_coord' => array(lat, long), // array(lat float, lng float)
+			//'center_point' => array(), // empty, array(lat float, lng float) // TO DO
+			//'bounds' => array(), // empty, array(lat float, lng float) // TO DO
+			//'zoom_level' => 'auto' // auto fit around start_coord, end_coord or int 1-14 around center_point // TO DO
+		);
+	}
+}
+
+/**
+ * Shortcode to display a map
+ **/
+function ktn_show_map_shortcode() {
+	// Check for on page meta
+}
+
+//add_filters('', 'ktn_show_map_shortcode');

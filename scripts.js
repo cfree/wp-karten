@@ -14,18 +14,18 @@
 	
     function initialize() {
 		
-		// Set up start point
+		// Set up start point - TO DO: move to admin
 		var startLatLng = new google.maps.LatLng(32.753683,-117.143761); // 4181 Florida Street, San Diego, CA
 	
-		// Set up end point
+		// Set up end point - TO DO: move to admin
 		var endLatLng = new google.maps.LatLng(39.726486,-104.987536); // 650 N Speer Blvd W, Denver, CO (Towneplace Suites)
 		
-		// Custom icons
+		// Custom icons - TO DO: move to admin
 		var purpleIcon = "http://www.google.com/intl/en_us/mapfiles/ms/micons/green-dot.png";
 		
 		// Set up map
 			myOptions = {
-			 	zoom: 15,
+			 	zoom: 15, // TO DO: move to admin
 				center: startLatLng,
 			 	mapTypeId: google.maps.MapTypeId.ROADMAP
 			};
@@ -39,12 +39,12 @@
 			 	map: map,
 			 	position: startLatLng,
 				title: 'Start',
-				icon: purpleIcon
+				icon: purpleIcon // TO DO: move to admin
 			});
 		 
 			markersArray.push(startMarker);
 		 
-			//startMarker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1);
+			//startMarker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1); // TO DO: move to admin
 		
 			// Add each location to bounds
 			bounds.extend(startLatLng);
@@ -59,15 +59,14 @@
 		 
 			markersArray.push(endMarker);
 		 
-			//endMarker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1);
+			//endMarker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1);  // TO DO: move to admin
 		
 			// Add each location to bounds
 			//bounds.extend(endLatLng);
 		
-		// Show instagram posts	between November 10, 2012 and December 3, 2012
+		// Show instagram posts	between November 10, 2012 and December 3, 2012  // TO DO: move to admin
 		var user_cf = cf_getJSON('https://api.instagram.com/v1/users/2575810/media/recent?count=30&min_timestamp=1352527200&max_timestamp=1354514400&access_token=2575810.b5f685c.afb988a96a2e4267a8f42fe005411afb'); // @openapple
 		var user_pf = cf_getJSON('https://api.instagram.com/v1/users/223256831/media/recent?count=30&min_timestamp=1352527200&max_timestamp=1354514400&access_token=2575810.b5f685c.afb988a96a2e4267a8f42fe005411afb'); // @pfflyer787
-		//var user_pf = cf_getJSON('https://api.instagram.com/v1/users/223256831/media/recent?access_token=2575810.b5f685c.afb988a96a2e4267a8f42fe005411afb'); // @pfflyer787
 		
 		// Once both objects are obtained, map points
 		$.when(
