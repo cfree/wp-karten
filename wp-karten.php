@@ -131,16 +131,54 @@ function ktn_manage_custom_post_type_columns( $column, $post_id ) {
 
 add_action( 'manage_ktn_map_posts_custom_column', 'ktn_manage_custom_post_type_columns', 10, 2 );
 
-// Custom map post type column styles
-function ktn_map_custom_post_type_admin_css() {
-	echo '<style>
-   	.fixed .column-id {
-   		width: 10%;
-   	}
-   	</style>';
+// Admin styles, scripts
+function ktn_admin_scripts_styles( $hook ) {
+	global $post_type;
+
+	// Is the post type `ktn_map`? Are we on the editor page?
+	if ( ! is_admin() || $post_type != 'ktn_map' || 'edit.php' != $hook ) {
+		return;
+	}
+
+	// Enqueue admin-columns.css on admin list page
+	if ( isset( $_GET['post_type'] ) && $_GET['post_type'] == 'ktn_map' ) {
+		wp_enqueue_style( 'karten-admin-columns', plugin_dir_url( __FILE__ ) . 'assets/css/admin-columns.css' );
+	}
 }
 
-add_action('admin_head', 'ktn_map_custom_post_type_admin_css');
+add_action( 'admin_enqueue_scripts', 'ktn_admin_scripts_styles' );
+
+// Admin editor scripts
+function ktn_admin_edit_scripts() {
+	global $post_type;
+
+	// Is the post type `ktn_map`?
+	if ( ! is_admin() || $post_type != 'ktn_map') {
+		return;
+	}
+	
+	// Enqueue admin-edit.js on map custom post type editor page
+	wp_enqueue_script( 'karten-admin-edit', plugin_dir_url( __FILE__ ) . 'assets/js/admin-edit.js', array( 'jquery-ui-datepicker' ), '1.0.0', true );
+}
+
+add_action( 'admin_print_scripts-post.php', 'ktn_admin_edit_scripts', 11);
+add_action( 'admin_print_scripts-post-new.php', 'ktn_admin_edit_scripts', 11 );
+
+// Admin editor styles
+function ktn_admin_edit_styles() {
+	global $post_type;
+
+	// Is the post type `ktn_map`?
+	if ( ! is_admin() || $post_type != 'ktn_map') {
+		return;
+	}
+	
+	// Enqueue admin-edit.css on map custom post type editor page
+	wp_enqueue_style( 'karten-admin-edit', plugin_dir_url( __FILE__ ) . 'assets/css/admin-edit.css' );
+}
+
+add_action( 'admin_print_styles-post.php', 'ktn_admin_edit_styles', 11);
+add_action( 'admin_print_styles-post-new.php', 'ktn_admin_edit_styles', 11 );
 
 // Post meta setup
 function ktn_meta_setup() {
@@ -166,25 +204,27 @@ function ktn_add_meta_box() {
 // Post meta view
 // TO DO: Make users, hashtags repeater blocks. Make start, end dates date-pickers.
 function ktn_meta_box_view( $object, $box ) {
-	wp_nonce_field( basename( __FILE__ ), 'ktn_meta_nonce' );
+	wp_nonce_field( plugin_basename( __FILE__ ), 'ktn_meta_nonce' );
+	wp_nonce_field( plugin_basename( __FILE__ ), 'ktn_date_picker_nonce' );
 
 	?>
-	<p>
 	<!-- TO DO: Repeater -->
+	<p>
 		<label class="req" for="ktn-meta-users"><?php _e( 'User', 'ktn' ); ?></label>
 		<br />
 		<input class="widefat" type="text" name="ktn-meta-users" id="ktn-meta-users" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_users', true ) ); ?>" size="30" />
 	</p>
 	<p>
-		<label class="req" for="ktn-meta-hashtags"><?php _e( 'Hashtag (don\'t include #)', 'ktn' ); ?></label>
+		<label class="req" for="ktn-meta-hashtags"><?php _e( 'Hashtag <small>(don\'t include #)</small>', 'ktn' ); ?></label>
 		<br />
 		<input class="widefat" type="text" name="ktn-meta-hashtags" id="ktn-meta-hashtags" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_hashtags', true ) ); ?>" size="30" />
 	</p>
 	<!-- TO DO: Make date picker -->
 	<p>
-		a<label class="req" for="ktn-meta-start-date"><?php _e( 'Start Date', 'ktn' ); ?></label>
+		<label class="req" for="ktn-meta-start-date"><?php _e( 'Start Date', 'ktn' ); ?></label>
 		<br />
 		<input class="widefat" type="text" name="ktn-meta-start-date" id="ktn-meta-start-date" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_start_date', true ) ); ?>" size="30" />
+		<input class="widefat" type="hidden" name="ktn-meta-start-date" id="ktn-meta-start-date" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_start_date', true ) ); ?>" size="30" />
 	</p>
 	<!-- TO DO: Make date picker -->
 	<p>
@@ -217,6 +257,10 @@ function ktn_save_meta( $post_id, $post ) {
 		return $post_id;
 	}
 
+	if ( $post->post_type != 'ktn_map' || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) ) {
+		return;
+	}
+
 	// Get the post type object
 	$post_type = get_post_type_object( $post->post_type );
 
@@ -227,21 +271,21 @@ function ktn_save_meta( $post_id, $post ) {
 	// Get the posted data and sanitize it for use as an HTML class
 	$new_meta_value = ( isset( $_POST['smashing-post-class'] ) ? sanitize_html_class( $_POST['smashing-post-class'] ) : '' );
 
-	/* Get the meta key. */
+	// Get the meta key
 	$meta_key = 'smashing_post_class';
 
-	/* Get the meta value of the custom field key. */
+	// Get the meta value of the custom field key
 	$meta_value = get_post_meta( $post_id, $meta_key, true );
 
-	/* If a new meta value was added and there was no previous value, add it. */
+	// If a new meta value was added and there was no previous value, add it.
 	if ( $new_meta_value && '' == $meta_value )
 		add_post_meta( $post_id, $meta_key, $new_meta_value, true );
 
-	/* If the new meta value does not match the old value, update it. */
+	// If the new meta value does not match the old value, update it
 	elseif ( $new_meta_value && $new_meta_value != $meta_value )
 		update_post_meta( $post_id, $meta_key, $new_meta_value );
 
-	/* If there is no new meta value but an old value exists, delete it. */
+	// If there is no new meta value but an old value exists, delete it
 	elseif ( '' == $new_meta_value && $meta_value )
 		delete_post_meta( $post_id, $meta_key, $meta_value );
 }
