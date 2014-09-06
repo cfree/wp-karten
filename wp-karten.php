@@ -251,19 +251,12 @@ function ktn_meta_box_view( $object, $box ) {
 function ktn_save_meta( $post_id, $post ) {
 	// Verify the nonce before proceeding
 	if ( ! isset( $_POST['ktn_meta_nonce'] ) || ! wp_verify_nonce( $_POST['ktn_meta_nonce'], 'ktn_save_meta' ) ) {
-		echo 'meow';
-		die();
 		return $post_id;
 	}
 
 	if ( $post->post_type != 'ktn_map' || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) ) {
-		echo 'woof';
-		die();
 		return $post_id;
 	}
-
-	echo 'quack';
-	die();
 
 	// Get the post type object
 	$post_type = get_post_type_object( $post->post_type );
@@ -293,7 +286,7 @@ function ktn_save_meta( $post_id, $post ) {
 
 function ktn_set_meta($post_id, $meta_key, $new_meta_value_string) {
 	// Get the posted data and sanitize it for use as an HTML class
-	$new_meta_value = ( isset( $_POST[$new_meta_value_string] ) ? sanitize_html_class( $_POST[$new_meta_value_string] ) : '' );
+	$new_meta_value = ( isset( $_POST[$new_meta_value_string] ) ? $_POST[sanitize_html_class( $new_meta_value_string )] : '' );
 
 	// Get the meta key
 	$meta_value = get_post_meta( $post_id, $meta_key, true );
