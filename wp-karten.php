@@ -121,7 +121,7 @@ function ktn_manage_custom_post_type_columns( $column, $post_id ) {
 
 		// If displaying the 'shortcode' column
 		case 'shortcode':
-			echo esc_html( '<input type="text" size="25" readonly="readonly" value=\'[karten id="' . esc_attr( $post_id ) . '"]\' />' );
+			_e( '<input type="text" size="25" readonly="readonly" value=\'[karten id="' . esc_attr( $post_id ) . '"]\' />', 'ktn' );
 			break;
 
 		default:
