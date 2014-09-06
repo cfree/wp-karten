@@ -56,6 +56,10 @@ function ktn_options_view() {
 				<!-- TO DO: Link -->
 				<input type="text" name="ktn_instagramapi" size="45" value="<?php echo get_option( 'ktn_instagramapi' ); ?>" />
 			</p>
+			<p>
+				<strong><?php _e( 'How long to keep API cache <small>(in seconds)</small>', 'ktn' ); ?></strong><br />
+				<input type="text" name="ktn_api_cache" size="45" value="<?php echo get_option( 'ktn_api_cache' ); ?>" />
+			</p>
 
 			<p>
 				<input type="submit" name="Submit" class="button button-primary" value="Save Settings" />
@@ -78,11 +82,65 @@ function ktn_custom_post_type() {
 			'menu_icon' => 'dashicons-pressthis',
 			'public' => true,
 			'has_archive' => true,
+			'publicly_queryable' => false,
+			'show_in_nav_menus' => false,
+			'supports' => array(
+				'title'
+			)
 		)
 	);
 }
 
 add_action( 'init', 'ktn_custom_post_type' );
+
+// Custom columns for map post type
+function ktn_custom_post_type_columns( $columns ) {
+	$columns = array(
+		'cb' => '<input type="checkbox" />',
+		'id' => __( 'ID' ),
+		'title' => __( 'Map' ),
+		'shortcode' => __( 'Shortcode' ),
+		'date' => __( 'Date' )
+	);
+
+	return $columns;
+}
+
+add_filter( 'manage_edit-ktn_map_columns', 'ktn_custom_post_type_columns' );
+
+// Populating custom map post type columns
+// Modified from: http://justintadlock.com/archives/2011/06/27/custom-columns-for-custom-post-types
+function ktn_manage_custom_post_type_columns( $column, $post_id ) {
+	global $post;
+
+	switch( $column ) {
+		// If displaying the 'id' column
+		case 'id':
+			_e($post_id, 'ktn');
+			break;
+
+		// If displaying the 'shortcode' column
+		case 'shortcode':
+			echo '<input type="text" size="25" readonly="readonly" value=\'[karten id="' . $post_id . '"]\' />';
+			break;
+
+		default:
+			break;
+	}
+}
+
+add_action( 'manage_ktn_map_posts_custom_column', 'ktn_manage_custom_post_type_columns', 10, 2 );
+
+// Custom map post type column styles
+function ktn_map_custom_post_type_admin_css() {
+	echo '<style>
+   	.fixed .column-id {
+   		width: 10%;
+   	}
+   	</style>';
+}
+
+add_action('admin_head', 'ktn_map_custom_post_type_admin_css');
 
 // Post meta setup
 function ktn_meta_setup() {
