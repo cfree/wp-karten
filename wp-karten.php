@@ -97,9 +97,9 @@ add_action( 'init', 'ktn_custom_post_type' );
 function ktn_custom_post_type_columns( $columns ) {
 	$columns = array(
 		'cb' => '<input type="checkbox" />',
-		'id' => __( 'ID' ),
 		'title' => __( 'Map' ),
 		'shortcode' => __( 'Shortcode' ),
+		'id' => __( 'ID' ),
 		'date' => __( 'Date' )
 	);
 
@@ -116,12 +116,12 @@ function ktn_manage_custom_post_type_columns( $column, $post_id ) {
 	switch( $column ) {
 		// If displaying the 'id' column
 		case 'id':
-			_e($post_id, 'ktn');
+			_e( $post_id, 'ktn' );
 			break;
 
 		// If displaying the 'shortcode' column
 		case 'shortcode':
-			echo '<input type="text" size="25" readonly="readonly" value=\'[karten id="' . $post_id . '"]\' />';
+			echo esc_html( '<input type="text" size="25" readonly="readonly" value=\'[karten id="' . esc_attr( $post_id ) . '"]\' />' );
 			break;
 
 		default:
