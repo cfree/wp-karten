@@ -174,6 +174,7 @@ function ktn_admin_edit_styles() {
 	}
 	
 	// Enqueue admin-edit.css on map custom post type editor page
+	wp_enqueue_style( 'jquery-ui', plugin_dir_url( __FILE__ ) . 'assets/css/jquery-ui/jquery-ui.theme.css' );
 	wp_enqueue_style( 'karten-admin-edit', plugin_dir_url( __FILE__ ) . 'assets/css/admin-edit.css' );
 }
 
@@ -223,14 +224,13 @@ function ktn_meta_box_view( $object, $box ) {
 	<p>
 		<label class="req" for="ktn-meta-start-date"><?php _e( 'Start Date', 'ktn' ); ?></label>
 		<br />
-		<input class="widefat" type="text" name="ktn-meta-start-date" id="ktn-meta-start-date" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_start_date', true ) ); ?>" size="30" />
-		<input class="widefat" type="hidden" name="ktn-meta-start-date" id="ktn-meta-start-date" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_start_date', true ) ); ?>" size="30" />
+		<input size="20" type="text" name="ktn-meta-start-date" id="ktn-meta-start-date" class="datepicker" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_start_date', true ) ); ?>" size="30" />
 	</p>
 	<!-- TO DO: Make date picker -->
 	<p>
 		<label class="req" for="ktn-meta-end-date"><?php _e( 'End Date', 'ktn' ); ?></label>
 		<br />
-		<input class="widefat" type="text" name="ktn-meta-end-date" id="ktn-meta-end-date" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_end_date', true ) ); ?>" size="30" />
+		<input size="20" type="text" name="ktn-meta-end-date" id="ktn-meta-end-date" class="datepicker" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_end_date', true ) ); ?>" size="30" />
 	</p>
 	<p>
 		<label class="req" for="ktn-meta-start-addr"><?php _e( 'Start Address', 'ktn' ); ?></label>
