@@ -194,7 +194,7 @@ add_action( 'load-post-new.php', 'ktn_meta_setup' );
 function ktn_add_meta_box() {
 	add_meta_box(
 		'ktn_meta',
-		esc_html__( 'Karten Meta', 'ktn' ),
+		esc_html__( 'Map Settings', 'ktn' ),
 		'ktn_meta_box_view',
 		'ktn_map',
 		'normal',
@@ -205,8 +205,7 @@ function ktn_add_meta_box() {
 // Post meta view
 // TO DO: Make users, hashtags repeater blocks. Make start, end dates date-pickers.
 function ktn_meta_box_view( $object, $box ) {
-	wp_nonce_field( plugin_basename( __FILE__ ), 'ktn_meta_nonce' );
-	wp_nonce_field( plugin_basename( __FILE__ ), 'ktn_date_picker_nonce' );
+	wp_nonce_field( 'ktn_save_meta', 'ktn_meta_nonce' );
 
 	?>
 	<!-- TO DO: Repeater -->
@@ -251,41 +250,66 @@ function ktn_meta_box_view( $object, $box ) {
 // Save post meta
 function ktn_save_meta( $post_id, $post ) {
 	// Verify the nonce before proceeding
-	if ( ! isset( $_POST['ktn_meta_nonce'] ) || ! wp_verify_nonce( $_POST['ktn_meta_nonce'], basename( __FILE__ ) ) ) {
+	if ( ! isset( $_POST['ktn_meta_nonce'] ) || ! wp_verify_nonce( $_POST['ktn_meta_nonce'], 'ktn_save_meta' ) ) {
+		echo 'meow';
+		die();
 		return $post_id;
 	}
 
 	if ( $post->post_type != 'ktn_map' || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) ) {
-		return;
+		echo 'woof';
+		die();
+		return $post_id;
 	}
+
+	echo 'quack';
+	die();
 
 	// Get the post type object
 	$post_type = get_post_type_object( $post->post_type );
 
 	// Check if the current user has permission to edit the post
-	if ( ! current_user_can( $post_type->cap->edit_post, $post_id ) )
+	if ( ! current_user_can( $post_type->cap->edit_post, $post_id ) ) {
 		return $post_id;
+	}
 
+	// Form field names mapped to meta names
+	$meta_keys = array(
+		// form field name => meta name
+		'ktn-meta-users' => 'ktn_meta_users',
+		'ktn-meta-hashtags' => 'ktn_meta_hashtags',
+		'ktn-meta-start-date' => 'ktn_meta_start_date',
+		'ktn-meta-end-date' => 'ktn_meta_end_date',
+		'ktn-meta-start-addr' => 'ktn_meta_start_addr',
+		'ktn-meta-end-addr' => 'ktn_meta_end_addr',
+		'ktn-meta-max-posts' => 'ktn_meta_max_posts'
+	);
+
+	// Set new meta
+	foreach ($meta_keys as $field => $meta) {
+		ktn_set_meta( $post_id, $meta, $field );
+	}
+}
+
+function ktn_set_meta($post_id, $meta_key, $new_meta_value_string) {
 	// Get the posted data and sanitize it for use as an HTML class
-	$new_meta_value = ( isset( $_POST['smashing-post-class'] ) ? sanitize_html_class( $_POST['smashing-post-class'] ) : '' );
+	$new_meta_value = ( isset( $_POST[$new_meta_value_string] ) ? sanitize_html_class( $_POST[$new_meta_value_string] ) : '' );
 
 	// Get the meta key
-	$meta_key = 'smashing_post_class';
-
-	// Get the meta value of the custom field key
 	$meta_value = get_post_meta( $post_id, $meta_key, true );
 
-	// If a new meta value was added and there was no previous value, add it.
-	if ( $new_meta_value && '' == $meta_value )
+	// If a new meta value was added and there was no previous value, add it
+	if ( $new_meta_value && '' == $meta_value ) {
 		add_post_meta( $post_id, $meta_key, $new_meta_value, true );
-
+	}
 	// If the new meta value does not match the old value, update it
-	elseif ( $new_meta_value && $new_meta_value != $meta_value )
+	else if ( $new_meta_value && $new_meta_value != $meta_value ) {
 		update_post_meta( $post_id, $meta_key, $new_meta_value );
-
+	}
 	// If there is no new meta value but an old value exists, delete it
-	elseif ( '' == $new_meta_value && $meta_value )
+	else if ( '' == $new_meta_value && $meta_value ) {
 		delete_post_meta( $post_id, $meta_key, $meta_value );
+	}
 }
 
 // Are the admin settings complete?
