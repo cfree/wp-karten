@@ -203,7 +203,7 @@ function ktn_add_meta_box() {
 }
 
 // Post meta view
-// TO DO: Make users, hashtags repeater blocks. Make start, end dates date-pickers.
+// TO DO: Make users, hashtags repeater blocks
 function ktn_meta_box_view( $object, $box ) {
 	wp_nonce_field( 'ktn_save_meta', 'ktn_meta_nonce' );
 
@@ -242,7 +242,7 @@ function ktn_meta_box_view( $object, $box ) {
 	<p>
 		<label class="req" for="ktn-meta-max-posts"><?php _e( 'Maximum Number of Posts', 'ktn' ); ?></label>
 		<br />
-		<input class="widefat" type="text" name="ktn-meta-max-posts" id="ktn-meta-max-posts" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_max_posts', true ) ); ?>" size="10" />
+		<input size="20" type="number" min="0" name="ktn-meta-max-posts" id="ktn-meta-max-posts" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_max_posts', true ) ); ?>" size="10" />
 	</p>
 	<?php 
 }
