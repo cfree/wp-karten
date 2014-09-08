@@ -33,41 +33,110 @@ Author URI: http://www.craigfreeman.net
 define( 'KTN_THEME_VER', '0.1.0' );
 load_plugin_textdomain( 'ktn' );
 
-// Options page
+// Options page setup
 function ktn_options_setup() {
-	add_options_page( 'Karten Settings', 'Karten', 'manage_options', 'ktn_opts', 'ktn_options_view' );
+	// Create new settings section
+	add_options_page( 'Karten Settings', 'Karten', 'administrator', 'ktn_opts', 'ktn_options_view' );
+
+	// Call register settings function
+	add_action( 'admin_init', 'ktn_register_settings' );
 }
 
 add_action( 'admin_menu', 'ktn_options_setup' );
 
-// Options page view
-function ktn_options_view() {
-	?>
-	<div class="wrap">
-		<h2><?php _e( 'Karten Settings', 'ktn' ); ?></h2>
-		<form method="post" action="options.php">
-			<?php wp_nonce_field( 'ktn_options_nonce' ); ?>
-			<p>
-				<strong><?php _e( 'Google Maps v3 API Key', 'ktn' ); ?></strong><br />
-				<input type="text" name="ktn_gmapsapi" size="45" value="<?php echo get_option( 'ktn_gmapsapi' ); ?>" />
-			</p>
-			<p>
-				<strong><?php _e( 'Instagram API Access Token', 'ktn' ); ?></strong><br />
-				<!-- TO DO: Link -->
-				<input type="text" name="ktn_instagramapi" size="45" value="<?php echo get_option( 'ktn_instagramapi' ); ?>" />
-			</p>
-			<p>
-				<strong><?php _e( 'How long to keep API cache <small>(in seconds)</small>', 'ktn' ); ?></strong><br />
-				<input type="text" name="ktn_api_cache" size="45" value="<?php echo get_option( 'ktn_api_cache' ); ?>" />
-			</p>
+// Options page settings
+function ktn_register_settings() {
+    add_settings_section(
+        'ktn_opts_api_keys',
+        'API Keys',
+        'ktn_opts_api_keys_callback',
+        'ktn_opts'
+    );
 
-			<p>
-				<input type="submit" name="Submit" class="button button-primary" value="Save Settings" />
-			</p>
-			<input type="hidden" name="action" value="update" />
-			<input type="hidden" name="page_options" value="ktn_gmapsapi,ktn_instagramapi" />
-		</form>
-	</div>
+    // Google Maps v3 API key
+    add_settings_field(
+		'ktn_gmapsapi',
+		'Google Maps v3 API Key',
+		'ktn_gmapsapi_input_callback',
+		'ktn_opts',
+		'ktn_opts_api_keys'
+	);
+
+	register_setting(
+		'ktn_settings_group',
+		'ktn_gmapsapi'
+	);
+
+	// Instagram API access token
+	add_settings_field(
+		'ktn_instagramapi',
+		'Instagram API Access Token',
+		'ktn_instagramapi_input_callback',
+		'ktn_opts',
+		'ktn_opts_api_keys'
+	);
+
+	register_setting(
+		'ktn_settings_group',
+		'ktn_instagramapi'
+	);
+
+	// API cache
+	add_settings_field(
+		'ktn_api_cache',
+		'How long to keep API cache <small>(in seconds)</small>',
+		'ktn_api_cache_input_callback',
+		'ktn_opts',
+		'ktn_opts_api_keys'
+	);
+
+	register_setting(
+		'ktn_settings_group',
+		'ktn_api_cache'
+	);
+}
+
+function ktn_opts_api_keys_callback() {
+	_e( '<p>Enter your API information here.</p>', 'ktn' );
+}
+
+function ktn_options_view() {
+	// Check that the user is allowed to update options
+	if ( !current_user_can( 'manage_options' ) ) {
+		wp_die( 'You do not have sufficient permissions to access this page.' );
+	}
+
+	?>
+		<div class="wrap">
+			<h2><?php _e( 'Karten Settings', 'ktn' ); ?></h2>
+			<form method="post" action="options.php">
+				<?php
+					do_settings_sections( 'ktn_opts' );
+
+					settings_fields( 'ktn_settings_group' );
+
+					submit_button();
+				?>
+			</form>
+		</div>
+	<?php
+}
+
+function ktn_gmapsapi_input_callback() {
+	?>
+		<input type="text" name="ktn_gmapsapi" id="ktn_gmapsapi" size="45" value="<?php echo get_option( 'ktn_gmapsapi' ); ?>" />
+	<?php
+}
+
+function ktn_instagramapi_input_callback() {
+	?>
+		<input type="text" name="ktn_instagramapi" id="ktn_instagramapi" size="45" value="<?php echo get_option( 'ktn_instagramapi' ); ?>" />
+	<?php
+}
+
+function ktn_api_cache_input_callback() {
+	?>
+		<input type="text" name="ktn_api_cache" id="ktn_api_cache" size="20" value="<?php echo get_option( 'ktn_api_cache' ); ?>" />
 	<?php
 }
 
@@ -109,11 +178,10 @@ function ktn_custom_post_type_columns( $columns ) {
 add_filter( 'manage_edit-ktn_map_columns', 'ktn_custom_post_type_columns' );
 
 // Populating custom map post type columns
-// Modified from: http://justintadlock.com/archives/2011/06/27/custom-columns-for-custom-post-types
 function ktn_manage_custom_post_type_columns( $column, $post_id ) {
 	global $post;
 
-	switch( $column ) {
+	switch ( $column ) {
 		// If displaying the 'id' column
 		case 'id':
 			_e( $post_id, 'ktn' );
