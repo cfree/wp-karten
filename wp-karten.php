@@ -352,7 +352,23 @@ function ktn_save_meta( $post_id, $post ) {
 	}
 }
 
-function ktn_set_meta($post_id, $meta_key, $new_meta_value_string) {
+/**
+ * Get Maps post meta
+ */
+function ktn_get_meta() {
+	// ktn-meta-users
+	// ktn-meta-hashtags
+	// ktn-meta-start-date
+	// ktn-meta-end-date
+	// ktn-meta-start-addr
+	// ktn-meta-end-addr
+	// ktn-meta-max-posts
+}
+
+/**
+ * Set Maps post meta
+ */
+function ktn_set_meta( $post_id, $meta_value, $meta_key ) {
 	// Get the posted data and sanitize it for use as an HTML class
 	$new_meta_value = ( isset( $_POST[$new_meta_value_string] ) ? $_POST[sanitize_html_class( $new_meta_value_string )] : '' );
 
@@ -373,55 +389,108 @@ function ktn_set_meta($post_id, $meta_key, $new_meta_value_string) {
 	}
 }
 
-// Are the admin settings complete?
-function ktn_opts_set() {
-	// Google Maps API Key
-	if ( get_option( 'ktn_gmapsapi' ) ) {
-		define( 'KTN_GMAPS_KEY', get_option( 'ktn_gmapsapi') );
+// Are the admin settings set?
+function ktn_get_opts() {
+	if ( is_defined( 'KARTEN_GMAPS_API_KEY' ) && is_defined( 'KARTEN_INSTAGRAM_API_KEY' ) ) {
+		return array(
+			KARTEN_GMAPS_API_KEY,
+			KARTEN_INSTAGRAM_API_KEY
+		);
 	}
-	// Instagram API Access Token
-	if ( get_option( 'ktn_instagramapi' ) ) {
-		define( 'KTN_INSTAGRAM_TOKEN', get_option( 'ktn_instagramapi' ) );
-	}
+	
+	return false;
+}
 
-	if ( defined( 'KTN_GMAPS_KEY' ) && defined( 'KTN_INSTAGRAM_TOKEN' ) ) {
-		return true;
-	}
-	else {
-		return false;
+/**
+ * Set constants right after WordPress core is loaded
+ */
+function ktn_set_opts() {
+	if ( $gmaps = get_option( 'ktn_gmapsapi' ) && $instagram = get_option( 'ktn_instagramapi' ) ) {
+		if ( ! is_defined( 'KARTEN_GMAPS_API_KEY' ) && ! is_defined( 'KARTEN_INSTAGRAM_API_KEY' ) ) {
+			define( 'KARTEN_GMAPS_API_KEY', $gmaps );
+			define( 'KARTEN_INSTAGRAM_API_KEY', $instagram );
+		}
 	}
 }
 
-// Is there related meta on this page?
-// function ktn_post_has_meta() {
-// 	global $post;
-// 	$page_id = $post(get_the_ID());
+add_action( 'init', 'ktn_set_opts' );
 
-// 	// Get meta
-// }
+// Is there related Map meta on this page?
+function ktn_get_post_meta() {
+	global $post;
+
+	// Get meta
+	$meta_values = get_post_meta( get_the_ID(), 'ktn_meta' );
+
+	// Get map post IDs
+	// Get meta of map post ID
+	// Return array of URL parameter-ready items for each map post ID
+
+	// Otherwise...
+	return false;
+}
 
 // Enqueue scripts/styles in template header
 function ktn_assets() {
 	// Is the page worthy of loading the assets? (Are options entered and is meta on the page?)
-	if ( ktn_opts_set() && ktn_post_has_meta() ) {
-		// Scripts
-		wp_enqueue_script( 'ktn_google_maps', 'https://maps.googleapis.com/maps/api/js?key=' . KTN_GMAPS_KEY . '&sensor=false', array(), KTN_THEME_VER, false );
-		wp_enqueue_script( 'ktn_script', plugins_url( '/scripts.js', __FILE__ ), array( 'jquery', 'ktn_google_maps', 'ktn_google_maps_old' ), KTN_THEME_VER, true );
-
+	if ( is_defined( 'KARTEN_INSTAGRAM_API_KEY' ) && is_defined( 'KARTEN_GMAPS_API_KEY' ) && $maps_meta = ktn_get_post_meta() && is_array( $meta ) ) {
 		// Stylesheets	
-		wp_register_style( 'ktn_style', plugins_url( '/style.css', __FILE__ ), array(), KTN_THEME_VER );
+		wp_register_style( 'ktn_style', plugins_url( '/assets/css/style.css', __FILE__ ), array(), KTN_THEME_VER );
 		wp_enqueue_style( 'ktn_style' );
+
+		// Build API queries
+		$urls = array();
+
+		foreach ( $maps_meta as $map_meta ) {
+			$urls[] = ktn_get_query_url( $map_meta );
+		}
+
+		// Scripts
+		wp_enqueue_script( 'ktn_google_maps', 'https://maps.googleapis.com/maps/api/js?key=' . $opts[0] . '&sensor=false', array(), KTN_THEME_VER, false );
+		wp_register_script( 'ktn_scripts', plugins_url( '/assets/js/scripts.js', __FILE__ ), array( 'jquery', 'ktn_google_maps' ), KTN_THEME_VER, true );
+		wp_localize_script( 'ktn_scripts', 'KARTEN', $urls );
+		wp_enqueue_script( 'ktn_scripts' );
 	}
 }
 
 add_action( 'wp_enqueue_scripts', 'ktn_assets' );
 
 /**
- * DEPRECATED
- **/
-function showMap() {
-	echo file_get_contents( dirname( __FILE__ ) . '/map-template.php' );
+ * Construct Instagram API URL
+ */
+function ktn_get_query_url( $parameters ) {
+	// @TO-DO: Translate Instagram username to ID
+	$user_id = '2575810';
+	$base_url = 'https://api.instagram.com/v1/users/' . $user_id . '/media/recent?access_token=' . KARTEN_INSTAGRAM_API_KEY;
+
+	// array ('count'=>30, 'min_timestamp'=>1352527200, 'max_timestamp'=>1354514400 );
+	// count=30&min_timestamp=1352527200&max_timestamp=1354514400
+	$query_string = http_build_query( $parameters );
+
+	return $base_url . $query_string;
 }
+
+/**
+ * @DONE: Implement shortcode
+ * @DONE: Implement template tag
+ * @TO-DO: Prepare map post meta to have URL constructed
+ * @TO-DO: Construct URL
+ * @TO-DO: Get Instagram user ID
+ * @TO-DO: Enqueue scripts only when needed
+ *    - Comb post for short code pre-save, add meta array of associated Map post IDs?
+ *    - Check meta for map post IDs when loading page, create URLs and localize, enqueue scripts/styles?
+ * @TO-DO: Tie short code to scripts
+ * @TO-DO: Object orientify
+ * @TO-DO: Use PHPDoc comment formatting: http://make.wordpress.org/core/handbook/inline-documentation-standards/php-documentation-standards/
+ * @TO-DO: Help Section (how to get Google Maps API, how to create Instagram client & how to get Instagram API access token, explain cache)
+ * @TO-DO: Decide on license
+ * @TO-DO: Update README
+ * @TO-DO: Create WP README
+ * @TO-DO: Review plugin standards, adhere
+ * @TO-DO: Create website explaining plugin
+ * @TO-DO: Code review
+ */
+
 
 /**
  * Display a map
@@ -451,8 +520,31 @@ function showMap() {
 /**
  * Shortcode to display a map
  **/
-function ktn_show_map_shortcode() {
-	// Check for on page meta
+function ktn_show_map_shortcode_handler( $atts ) {
+	$has_id = ( is_array( $atts ) && ! empty( $atts['id'] ) ) ? true : false;
+
+	if ( $has_id ) {
+		print_r('has id');
+		ktn_get_map( $atts['id'] );
+	}
 }
 
-//add_filters('', 'ktn_show_map_shortcode');
+add_shortcode( 'karten', 'ktn_show_map_shortcode_handler' );
+
+/**
+ * Template tag to display a map
+ **/
+function ktn_map( $id ) {
+	echo ktn_get_map( $id );
+}
+
+/**
+ * Template tag to return a map
+ **/
+function ktn_get_map( $id ) {
+	// Is the ID numeric? Check for on page meta, options
+	if ( is_numeric( $id ) && ktn_get_opts() && ktn_get_post_meta() ) {
+		// Return map wrapper
+		return '<div class="map-canvas" data-karten-id="' . $id .'"></div><!-- Karten map -->';
+	}
+}
