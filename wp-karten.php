@@ -151,12 +151,13 @@ function ktn_instagramapi_token_input_callback() {
 	$val = '';
 
 	// No token saved or API response?
-	if ( ! $token && ! $response ) : ?>
+	if ( ! $token ) : ?>
 		<div id="message" class="updated fade">
 			<h3><?php _e( 'Steps to get Instagram API access:', 'ktn' ); ?></h3>
 			<ol>
-				<li><?php _e( 'Click the "Need a Client ID?" link below, login to Instagram, and register a new client', 'ktn' ); ?></li>
-				<li><?php _e( 'Copy new your Client\'s ID into the field above', 'ktn' ); ?></li>
+				<li><?php _e( 'Click the "Need a Client ID?" link below and login to Instagram', 'ktn' ); ?></li>
+				<li><?php _e( 'Register a new client and use the following as the REDIRECT URI', 'ktn' ); ?>: <code><?php echo $url; ?></code></li>
+				<li><?php _e( 'Copy new Client\'s ID into the field below', 'ktn' ); ?></li>
 				<li><?php _e( 'Click the "Need an Access Token?" link and log into Instagram', 'ktn' ); ?></li>
 				<li><?php _e( 'Copy the Access Token returned and enter it into the Access Token field below', 'ktn' ); ?></li>
 				<li><?php _e( 'Click the "Save Changes" button', 'ktn' ); ?></li>
