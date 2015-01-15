@@ -1,145 +1,193 @@
 (function($) {
 	
-	var geocoder;
-	var map;
-	var myOptions;
-	var markersArray = [];
-	var bounds;
-	var infowindow = new google.maps.InfoWindow();
-	var pointsArr = [];
-	
-	$(document).ready(function(){
-		initialize();
-	});
-	
-    function initialize() {
-		
-		// Set up start point - TO DO: move to admin
-		var startLatLng = new google.maps.LatLng(32.753683,-117.143761); // 4181 Florida Street, San Diego, CA
-	
-		// Set up end point - TO DO: move to admin
-		var endLatLng = new google.maps.LatLng(39.726486,-104.987536); // 650 N Speer Blvd W, Denver, CO (Towneplace Suites)
-		
-		// Custom icons - TO DO: move to admin
-		var purpleIcon = "http://www.google.com/intl/en_us/mapfiles/ms/micons/green-dot.png";
-		
-		// Set up map
-			myOptions = {
-			 	zoom: 15, // TO DO: move to admin
-				center: startLatLng,
-			 	mapTypeId: google.maps.MapTypeId.ROADMAP
-			};
-		 
-			map = new google.maps.Map(document.getElementById("map_canvas"),myOptions);
+	var KARTEN = {
+		geocoder = null,
+		map = null,
+		myOptions = null,
+		markersArray = [],
+		bounds = null,
+		infowindow = null;
+		pointsArr = [],
 
-			bounds = new google.maps.LatLngBounds();
+		/**
+		 * Initialize the app
+		 */
+		init: function() {
+			// Set infowindow
+			infoWindow = new google.maps.InfoWindow();
+			
+			// Set up start point - TO DO: move to admin
+			var startLatLng = new google.maps.LatLng(32.753683,-117.143761); // 4181 Florida Street, San Diego, CA
+		
+			// Set up end point - TO DO: move to admin
+			var endLatLng = new google.maps.LatLng(39.726486,-104.987536); // 650 N Speer Blvd W, Denver, CO (Towneplace Suites)
+			
+			// Custom icons - TO DO: move to admin
+			var purpleIcon = "http://www.google.com/intl/en_us/mapfiles/ms/micons/green-dot.png";
+			
+			// Set up map
+				myOptions = {
+					zoom: 15, // TO DO: move to admin
+					center: startLatLng,
+					mapTypeId: google.maps.MapTypeId.ROADMAP
+				};
+			 
+				map = new google.maps.Map(document.getElementById("map_canvas"),myOptions);
 
-		// Set up start marker
-			var startMarker = new google.maps.Marker({
-			 	map: map,
-			 	position: startLatLng,
-				title: 'Start',
-				icon: purpleIcon // TO DO: move to admin
+				bounds = new google.maps.LatLngBounds();
+
+			// Set up start marker
+				var startMarker = new google.maps.Marker({
+					map: map,
+					position: startLatLng,
+					title: 'Start',
+					icon: purpleIcon // TO DO: move to admin
+				});
+			 
+				markersArray.push(startMarker);
+			 
+				//startMarker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1); // TO DO: move to admin
+			
+				// Add each location to bounds
+				bounds.extend(startLatLng);
+			
+			// Set up end marker
+				var endMarker = new google.maps.Marker({
+					map: map,
+					position: endLatLng,
+					title: 'Finish',
+					icon: purpleIcon
+				});
+			 
+				markersArray.push(endMarker);
+			 
+				//endMarker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1);  // TO DO: move to admin
+			
+				// Add each location to bounds
+				//bounds.extend(endLatLng);
+			
+			// Show instagram posts	between November 10, 2012 and December 3, 2012  // TO DO: move to admin
+			var user_cf = cf_getJSON('https://api.instagram.com/v1/users/2575810/media/recent?count=30&min_timestamp=1352527200&max_timestamp=1354514400&access_token=2575810.b5f685c.afb988a96a2e4267a8f42fe005411afb'); // @openapple
+			var user_pf = cf_getJSON('https://api.instagram.com/v1/users/223256831/media/recent?count=30&min_timestamp=1352527200&max_timestamp=1354514400&access_token=2575810.b5f685c.afb988a96a2e4267a8f42fe005411afb'); // @pfflyer787
+			
+			// Once both objects are obtained, map points
+			$.when(
+				user_cf,
+				user_pf
+			).then(cf_map_points);
+			
+		}, // initialize
+
+		/**
+		 * Retrieve Instagram user ID
+		 */
+		getInstagramUserId = function( username ) {
+			// @TO-DO Use a promise
+			username = strtolower( trim( username ) );
+			url = 'https://api.instagram.com/v1/users/search?q=' . username . '&access_token=' . instagramApiKey;
+
+			get = file_get_contents(url);
+			json = json_decode(get);
+
+			foreach(json->data as user ) {
+				if (user->username == username) {
+					return user->id;
+				}
+			}
+
+			return false;
+		},
+
+		/**
+		 * Create query string and retrive data from Instagram API
+		 */
+		get_instragram_data: function( data ) {
+			// @TO=DO Use a promise
+			// Translate Instagram username to ID
+			base_url = 'https://api.instagram.com/v1/users/' + user_id + '/media/recent?access_token=' + KARTEN_INSTAGRAM_API_KEY;
+
+			return false;
+		},
+
+		/**
+		 * Go get the Instagram data
+		 */
+		retrieveJson: function(url) {
+			// Get JSON
+			return $.ajax({
+				type: "GET",
+				dataType: "jsonp",
+				cache: false,
+				url: url
 			});
-		 
-			markersArray.push(startMarker);
-		 
-			//startMarker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1); // TO DO: move to admin
-		
-			// Add each location to bounds
-			bounds.extend(startLatLng);
-		
-		// Set up end marker
-			var endMarker = new google.maps.Marker({
-			 	map: map,
-			 	position: endLatLng,
-				title: 'Finish',
-				icon: purpleIcon
-			});
-		 
-			markersArray.push(endMarker);
-		 
-			//endMarker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1);  // TO DO: move to admin
-		
-			// Add each location to bounds
-			//bounds.extend(endLatLng);
-		
-		// Show instagram posts	between November 10, 2012 and December 3, 2012  // TO DO: move to admin
-		var user_cf = cf_getJSON('https://api.instagram.com/v1/users/2575810/media/recent?count=30&min_timestamp=1352527200&max_timestamp=1354514400&access_token=2575810.b5f685c.afb988a96a2e4267a8f42fe005411afb'); // @openapple
-		var user_pf = cf_getJSON('https://api.instagram.com/v1/users/223256831/media/recent?count=30&min_timestamp=1352527200&max_timestamp=1354514400&access_token=2575810.b5f685c.afb988a96a2e4267a8f42fe005411afb'); // @pfflyer787
-		
-		// Once both objects are obtained, map points
-		$.when(
-			user_cf,
-			user_pf
-		).then(cf_map_points);
-		
-	} // initialize
-	
-	function cf_getJSON(url) {
-		// Get JSON
-		return $.ajax({
-	        type: "GET",
-	        dataType: "jsonp",
-	        cache: false,
-	        url: url
-		});
- 	}
-	
-	function addPoints(mapObj) {
-		// Store objects in one array if they have a location set
-		for(var i = 0; i < mapObj[0].data.length; i++) {
-			// Has location data
-			if(mapObj[0].data[i].location != null) {
-				// If has hashtag
-				if(mapObj[0].data[i].tags.length > 0 ) {
-					// Cycle through all hashtags
-					for(var l = 0; l < mapObj[0].data[i].tags.length; l++) {
-						// Find if hashtag is #move2012
-						if(mapObj[0].data[i].tags[l] == "move2012") {
-							// Save to array
-							pointsArr.push(mapObj[0].data[i]);
-						} // if
-					} // for
+		},
+
+		/**
+		 * Add points to the map
+		 */
+		addPoints: function(mapObj) {
+			// Store objects in one array if they have a location set
+			for (var i = 0; i < mapObj[0].data.length; i++) {
+				// Has location data
+				if (mapObj[0].data[i].location !== null) {
+					// If has hashtag
+					if (mapObj[0].data[i].tags.length > 0 ) {
+						// Cycle through all hashtags
+						for (var l = 0; l < mapObj[0].data[i].tags.length; l++) {
+							// Find if hashtag is #move2012
+							if (mapObj[0].data[i].tags[l] == "move2012") {
+								// Save to array
+								pointsArr.push(mapObj[0].data[i]);
+							} // if
+						} // for
+					} // if
 				} // if
-			} // if
-		} // for
-	}
-	
-	// Map points
-	function cf_map_points(mapObj1, mapObj2) {
-		// Add the points to a single array
-		addPoints(mapObj1);
-		addPoints(mapObj2);
-		
-		// Create points for each element in object
-		for(var j = 0; j < pointsArr.length; j++) {
-			// Create location from lat and lng
-			var location = new google.maps.LatLng(pointsArr[j].location.latitude, pointsArr[j].location.longitude);
-	
-			// Add to bounds
-			bounds.extend(location);
-			
-			// Create our "tiny" marker icon
-			var mapIcon = "http://www.google.com/intl/en_us/mapfiles/ms/micons/purple-dot.png";
-			
-			var locMarker = new google.maps.Marker({
-	        	map: map, 
-	        	position: location,
-				icon: mapIcon
-	    	});
-	
-			// Add to array
-			markersArray.push(locMarker);
-	
-			// Add infowindow
-			listenMarker(pointsArr[j], locMarker);
+			} // for
+		},
 
-		} // for
+		// Add the points to a map
+		mapPoints: function(mapObj1, mapObj2) {
+			// Add the points to a single array
+			addPoints(mapObj1);
+			addPoints(mapObj2);
+			
+			// Create points for each element in object
+			for(var j = 0; j < pointsArr.length; j++) {
+				// Create location from lat and lng
+				var location = new google.maps.LatLng(pointsArr[j].location.latitude, pointsArr[j].location.longitude);
 		
-		// Fix zoom to include all points
-		map.fitBounds(bounds);
-	} // cf_map_points
+				// Add to bounds
+				bounds.extend(location);
+				
+				// Create our "tiny" marker icon
+				var mapIcon = "http://www.google.com/intl/en_us/mapfiles/ms/micons/purple-dot.png";
+				
+				var locMarker = new google.maps.Marker({
+					map: map, 
+					position: location,
+					icon: mapIcon
+				});
+		
+				// Add to array
+				markersArray.push(locMarker);
+		
+				// Add infowindow
+				listenMarker(pointsArr[j], locMarker);
+
+			} // for
+			
+			// Fix zoom to include all points
+			map.fitBounds(bounds);
+		}
+	};
+
+	$(document).ready(function(){
+		KARTEN.init();
+	});
+
+
+
+	// ======================================================================
 	
 	// Infowindow
 	function listenMarker(mapObj, marker) {
@@ -177,7 +225,7 @@
 		// Create infowindow
 		google.maps.event.addListener(marker, 'click', function() {
 			infowindow.setContent(imgString);
-		  	infowindow.open(map, marker);
+			infowindow.open(map, marker);
 		});
 	}
 	

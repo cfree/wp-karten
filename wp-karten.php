@@ -17,7 +17,7 @@ Author URI: http://www.craigfreeman.net
 
 // This file is part of the Karten plugin for WordPress
 //
-// Copyright (c) 2012-2013 Craig Freeman. All rights reserved.
+// Copyright (c) 2012-2014 Craig Freeman. All rights reserved.
 // http://craigfreeman.net
 //
 // Released under the GPL license
@@ -29,11 +29,15 @@ Author URI: http://www.craigfreeman.net
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
 // **********************************************************************
 
-// Theme version
+/**
+ * Theme version
+ */
 define( 'KTN_THEME_VER', '0.1.0' );
 load_plugin_textdomain( 'ktn' );
 
-// Options page setup
+/**
+ * Options page setup
+ */
 function ktn_options_setup() {
 	// Create new settings section
 	add_options_page( 'Karten Settings', 'Karten', 'administrator', 'ktn_opts', 'ktn_options_view' );
@@ -44,17 +48,19 @@ function ktn_options_setup() {
 
 add_action( 'admin_menu', 'ktn_options_setup' );
 
-// Options page settings
+/**
+ * Options page settings
+ */
 function ktn_register_settings() {
-    add_settings_section(
-        'ktn_opts_api_keys',
-        'API Keys',
-        'ktn_opts_api_keys_callback',
-        'ktn_opts'
-    );
+	add_settings_section(
+		'ktn_opts_api_keys',
+		'API Keys',
+		'ktn_opts_api_keys_callback',
+		'ktn_opts'
+	);
 
-    // Google Maps v3 API key
-    add_settings_field(
+	// Google Maps v3 API key
+	add_settings_field(
 		'ktn_gmapsapi',
 		'Google Maps v3 API Key',
 		'ktn_gmapsapi_input_callback',
@@ -67,32 +73,32 @@ function ktn_register_settings() {
 		'ktn_gmapsapi'
 	);
 
+	// Instagram API client ID
+	add_settings_field(
+		'ktn_instagramapi_client',
+		'Instagram API Client ID',
+		'ktn_instagramapi_client_input_callback',
+		'ktn_opts',
+		'ktn_opts_api_keys'
+	);
+
+	register_setting(
+		'ktn_settings_group',
+		'ktn_instagramapi_client'
+	);
+
 	// Instagram API access token
 	add_settings_field(
-		'ktn_instagramapi',
+		'ktn_instagramapi_token',
 		'Instagram API Access Token',
-		'ktn_instagramapi_input_callback',
+		'ktn_instagramapi_token_input_callback',
 		'ktn_opts',
 		'ktn_opts_api_keys'
 	);
 
 	register_setting(
 		'ktn_settings_group',
-		'ktn_instagramapi'
-	);
-
-	// API cache
-	add_settings_field(
-		'ktn_api_cache',
-		'How long to keep API cache <small>(in seconds)</small>',
-		'ktn_api_cache_input_callback',
-		'ktn_opts',
-		'ktn_opts_api_keys'
-	);
-
-	register_setting(
-		'ktn_settings_group',
-		'ktn_api_cache'
+		'ktn_instagramapi_token'
 	);
 }
 
@@ -102,7 +108,7 @@ function ktn_opts_api_keys_callback() {
 
 function ktn_options_view() {
 	// Check that the user is allowed to update options
-	if ( !current_user_can( 'manage_options' ) ) {
+	if ( ! current_user_can( 'manage_options' ) ) {
 		wp_die( 'You do not have sufficient permissions to access this page.' );
 	}
 
@@ -125,22 +131,59 @@ function ktn_options_view() {
 function ktn_gmapsapi_input_callback() {
 	?>
 		<input type="text" name="ktn_gmapsapi" id="ktn_gmapsapi" size="45" value="<?php echo get_option( 'ktn_gmapsapi' ); ?>" />
+		<a href="https://code.google.com/apis/console" target="blank"><?php _e( 'Need an API key?', 'ktn' ); ?></a>
 	<?php
 }
 
-function ktn_instagramapi_input_callback() {
+function ktn_instagramapi_client_input_callback() {
 	?>
-		<input type="text" name="ktn_instagramapi" id="ktn_instagramapi" size="45" value="<?php echo get_option( 'ktn_instagramapi' ); ?>" />
+		<input type="text" name="ktn_instagramapi_client" id="ktn_instagramapi_client" size="45" value="<?php echo get_option( 'ktn_instagramapi_client' ); ?>" />
+		<a href="http://instagram.com/developer/clients/manage/" target="_blank"><?php _e( 'Need a Client ID?', 'ktn' ); ?></a>
 	<?php
 }
 
-function ktn_api_cache_input_callback() {
-	?>
-		<input type="text" name="ktn_api_cache" id="ktn_api_cache" size="20" value="<?php echo get_option( 'ktn_api_cache' ); ?>" />
+function ktn_instagramapi_token_input_callback() {
+	$token = get_option( 'ktn_instagramapi_token' );
+	$response = isset( $_GET['code'] ) ? $_GET['code'] : false;
+	$saved = ( isset( $_GET['settings-updated'] ) && $_GET['settings-updated'] == true ) ? $_GET['settings-updated'] : false;
+	$url = trailingslashit( admin_url() ) . 'options-general.php?page=ktn_opts';
+	$encoded_url = urlencode( $url );
+	$val = '';
+
+	// No token saved or API response?
+	if ( ! $token && ! $response ) : ?>
+		<div id="message" class="updated fade">
+			<h3><?php _e( 'Steps to get Instagram API access:', 'ktn' ); ?></h3>
+			<ol>
+				<li><?php _e( 'Click the "Need a Client ID?" link below, login to Instagram, and register a new client', 'ktn' ); ?></li>
+				<li><?php _e( 'Copy new your Client\'s ID into the field above', 'ktn' ); ?></li>
+				<li><?php _e( 'Click the "Need an Access Token?" link and log into Instagram', 'ktn' ); ?></li>
+				<li><?php _e( 'Copy the Access Token returned and enter it into the Access Token field below', 'ktn' ); ?></li>
+				<li><?php _e( 'Click the "Save Changes" button', 'ktn' ); ?></li>
+			</ol>
+		</div>
+	<?php endif;
+
+	// API has responded? 
+	if ( $response && ! $saved ) : ?>
+		<div id="message" class="updated fade">
+			<p>
+				<?php _e( sprintf( 'Your Access Token is: <code>%s</code>', esc_html( $response ) ), 'ktn' ); ?><br/>
+				<?php _e( 'Be sure to copy this into the Access Token field below and save the settings.', 'ktn' ); ?>
+			</p>
+		</div>
+	<?php endif;
+
+	if ( $client = get_option( 'ktn_instagramapi_client' ) ) : ?>
+			<input type="text" name="ktn_instagramapi_token" id="ktn_instagramapi_token" size="45" value="<?php echo $token; ?>" />
 	<?php
+		echo '<a href="https://instagram.com/oauth/authorize/?client_id=' . $client . '&redirect_uri=' . $encoded_url . '&response_type=code">' . __( 'Need an Access Token?', 'ktn' ) . '</a>';
+	endif;
 }
 
-// Create map post type
+/**
+ * Create map post type
+ */
 function ktn_custom_post_type() {
 	register_post_type( 'ktn_map',
 		array(
@@ -154,7 +197,7 @@ function ktn_custom_post_type() {
 			'publicly_queryable' => false,
 			'show_in_nav_menus' => false,
 			'supports' => array(
-				'title'
+				'title',
 			)
 		)
 	);
@@ -162,14 +205,16 @@ function ktn_custom_post_type() {
 
 add_action( 'init', 'ktn_custom_post_type' );
 
-// Custom columns for map post type
+/**
+ * Custom columns for map post type
+ */
 function ktn_custom_post_type_columns( $columns ) {
 	$columns = array(
 		'cb' => '<input type="checkbox" />',
 		'title' => __( 'Map' ),
 		'shortcode' => __( 'Shortcode' ),
 		'id' => __( 'ID' ),
-		'date' => __( 'Date' )
+		'date' => __( 'Date' ),
 	);
 
 	return $columns;
@@ -177,7 +222,9 @@ function ktn_custom_post_type_columns( $columns ) {
 
 add_filter( 'manage_edit-ktn_map_columns', 'ktn_custom_post_type_columns' );
 
-// Populating custom map post type columns
+/**
+ * Populating custom map post type columns
+ */
 function ktn_manage_custom_post_type_columns( $column, $post_id ) {
 	global $post;
 
@@ -199,7 +246,9 @@ function ktn_manage_custom_post_type_columns( $column, $post_id ) {
 
 add_action( 'manage_ktn_map_posts_custom_column', 'ktn_manage_custom_post_type_columns', 10, 2 );
 
-// Admin styles, scripts
+/**
+ * Admin styles, scripts
+ */
 function ktn_admin_scripts_styles( $hook ) {
 	global $post_type;
 
@@ -216,7 +265,9 @@ function ktn_admin_scripts_styles( $hook ) {
 
 add_action( 'admin_enqueue_scripts', 'ktn_admin_scripts_styles' );
 
-// Admin editor scripts
+/**
+ * Admin editor scripts
+ */
 function ktn_admin_edit_scripts() {
 	global $post_type;
 
@@ -229,10 +280,12 @@ function ktn_admin_edit_scripts() {
 	wp_enqueue_script( 'karten-admin-edit', plugin_dir_url( __FILE__ ) . 'assets/js/admin-edit.js', array( 'jquery-ui-datepicker' ), '1.0.0', true );
 }
 
-add_action( 'admin_print_scripts-post.php', 'ktn_admin_edit_scripts', 11);
+add_action( 'admin_print_scripts-post.php', 'ktn_admin_edit_scripts', 11 );
 add_action( 'admin_print_scripts-post-new.php', 'ktn_admin_edit_scripts', 11 );
 
-// Admin editor styles
+/**
+ * Admin editor styles
+ */
 function ktn_admin_edit_styles() {
 	global $post_type;
 
@@ -249,7 +302,9 @@ function ktn_admin_edit_styles() {
 add_action( 'admin_print_styles-post.php', 'ktn_admin_edit_styles', 11);
 add_action( 'admin_print_styles-post-new.php', 'ktn_admin_edit_styles', 11 );
 
-// Post meta setup
+/**
+ * Post meta setup
+ */
 function ktn_meta_setup() {
 	add_action( 'add_meta_boxes', 'ktn_add_meta_box' );
 	add_action( 'save_post', 'ktn_save_meta', 10, 2 );
@@ -258,7 +313,9 @@ function ktn_meta_setup() {
 add_action( 'load-post.php', 'ktn_meta_setup' );
 add_action( 'load-post-new.php', 'ktn_meta_setup' );
 
-// Add post meta box
+/**
+ * Add post meta box
+ */
 function ktn_add_meta_box() {
 	add_meta_box(
 		'ktn_meta',
@@ -270,13 +327,13 @@ function ktn_add_meta_box() {
 	);
 }
 
-// Post meta view
-// TO DO: Make users, hashtags repeater blocks
+/**
+ * Post meta view
+ */
 function ktn_meta_box_view( $object, $box ) {
 	wp_nonce_field( 'ktn_save_meta', 'ktn_meta_nonce' );
 
 	?>
-	<!-- TO DO: Repeater -->
 	<p>
 		<label class="req" for="ktn-meta-users"><?php _e( 'User', 'ktn' ); ?></label>
 		<br />
@@ -315,7 +372,9 @@ function ktn_meta_box_view( $object, $box ) {
 	<?php 
 }
 
-// Save post meta
+/**
+ * Save post meta
+ */
 function ktn_save_meta( $post_id, $post ) {
 	// Verify the nonce before proceeding
 	if ( ! isset( $_POST['ktn_meta_nonce'] ) || ! wp_verify_nonce( $_POST['ktn_meta_nonce'], 'ktn_save_meta' ) ) {
@@ -353,24 +412,11 @@ function ktn_save_meta( $post_id, $post ) {
 }
 
 /**
- * Get Maps post meta
- */
-function ktn_get_meta() {
-	// ktn-meta-users
-	// ktn-meta-hashtags
-	// ktn-meta-start-date
-	// ktn-meta-end-date
-	// ktn-meta-start-addr
-	// ktn-meta-end-addr
-	// ktn-meta-max-posts
-}
-
-/**
  * Set Maps post meta
  */
 function ktn_set_meta( $post_id, $meta_value, $meta_key ) {
 	// Get the posted data and sanitize it for use as an HTML class
-	$new_meta_value = ( isset( $_POST[$new_meta_value_string] ) ? $_POST[sanitize_html_class( $new_meta_value_string )] : '' );
+	$new_meta_value = ( isset( $_POST[$new_meta_value_string] ) ? $_POST[ sanitize_html_class( $new_meta_value_string ) ] : '' );
 
 	// Get the meta key
 	$meta_value = get_post_meta( $post_id, $meta_key, true );
@@ -379,22 +425,24 @@ function ktn_set_meta( $post_id, $meta_value, $meta_key ) {
 	if ( $new_meta_value && '' == $meta_value ) {
 		add_post_meta( $post_id, $meta_key, $new_meta_value, true );
 	}
+	// If there is no new meta value but an old value exists, delete it
+	else if ( empty( $new_meta_value ) && $meta_value ) {
+		delete_post_meta( $post_id, $meta_key, $meta_value );
+	}
 	// If the new meta value does not match the old value, update it
 	else if ( $new_meta_value && $new_meta_value != $meta_value ) {
 		update_post_meta( $post_id, $meta_key, $new_meta_value );
 	}
-	// If there is no new meta value but an old value exists, delete it
-	else if ( '' == $new_meta_value && $meta_value ) {
-		delete_post_meta( $post_id, $meta_key, $meta_value );
-	}
 }
 
-// Are the admin settings set?
+/**
+ * Are the admin settings set?
+ */
 function ktn_get_opts() {
-	if ( is_defined( 'KARTEN_GMAPS_API_KEY' ) && is_defined( 'KARTEN_INSTAGRAM_API_KEY' ) ) {
+	if ( defined( 'KARTEN_GMAPS_API_KEY' ) && defined( 'KARTEN_INSTAGRAM_API_KEY' ) ) {
 		return array(
-			KARTEN_GMAPS_API_KEY,
-			KARTEN_INSTAGRAM_API_KEY
+			'maps' => KARTEN_GMAPS_API_KEY,
+			'instagram' => KARTEN_INSTAGRAM_API_KEY,
 		);
 	}
 	
@@ -405,8 +453,8 @@ function ktn_get_opts() {
  * Set constants right after WordPress core is loaded
  */
 function ktn_set_opts() {
-	if ( $gmaps = get_option( 'ktn_gmapsapi' ) && $instagram = get_option( 'ktn_instagramapi' ) ) {
-		if ( ! is_defined( 'KARTEN_GMAPS_API_KEY' ) && ! is_defined( 'KARTEN_INSTAGRAM_API_KEY' ) ) {
+	if ( $gmaps = get_option( 'ktn_gmapsapi' ) && $instagram = get_option( 'ktn_instagramapi_token' ) ) {
+		if ( ! defined( 'KARTEN_GMAPS_API_KEY' ) && ! defined( 'KARTEN_INSTAGRAM_API_KEY' ) ) {
 			define( 'KARTEN_GMAPS_API_KEY', $gmaps );
 			define( 'KARTEN_INSTAGRAM_API_KEY', $instagram );
 		}
@@ -415,107 +463,88 @@ function ktn_set_opts() {
 
 add_action( 'init', 'ktn_set_opts' );
 
-// Is there related Map meta on this page?
-function ktn_get_post_meta() {
-	global $post;
+/**
+ * Enqueue scripts/styles in template header
+ */
+function ktn_enqueue_assets( $id ) {
+	// Stylesheets
+	wp_enqueue_style( 'ktn_style', plugins_url( '/assets/css/style.css', __FILE__ ), array(), KTN_THEME_VER );
 
-	// Get meta
-	$meta_values = get_post_meta( get_the_ID(), 'ktn_meta' );
-
-	// Get map post IDs
-	// Get meta of map post ID
-	// Return array of URL parameter-ready items for each map post ID
-
-	// Otherwise...
-	return false;
-}
-
-// Enqueue scripts/styles in template header
-function ktn_assets() {
-	// Is the page worthy of loading the assets? (Are options entered and is meta on the page?)
-	if ( is_defined( 'KARTEN_INSTAGRAM_API_KEY' ) && is_defined( 'KARTEN_GMAPS_API_KEY' ) && $maps_meta = ktn_get_post_meta() && is_array( $meta ) ) {
-		// Stylesheets	
-		wp_register_style( 'ktn_style', plugins_url( '/assets/css/style.css', __FILE__ ), array(), KTN_THEME_VER );
-		wp_enqueue_style( 'ktn_style' );
-
-		// Build API queries
-		$urls = array();
-
-		foreach ( $maps_meta as $map_meta ) {
-			$urls[] = ktn_get_query_url( $map_meta );
-		}
-
+	// Build API queries
+	if ( $params = ktn_query_params( $id ) ) {
 		// Scripts
-		wp_enqueue_script( 'ktn_google_maps', 'https://maps.googleapis.com/maps/api/js?key=' . $opts[0] . '&sensor=false', array(), KTN_THEME_VER, false );
+		wp_enqueue_script( 'ktn_google_maps', '//maps.googleapis.com/maps/api/js?key=' . KARTEN_GMAPS_API_KEY . '&sensor=false', array(), KTN_THEME_VER, false );
 		wp_register_script( 'ktn_scripts', plugins_url( '/assets/js/scripts.js', __FILE__ ), array( 'jquery', 'ktn_google_maps' ), KTN_THEME_VER, true );
-		wp_localize_script( 'ktn_scripts', 'KARTEN', $urls );
+		wp_localize_script( 'ktn_scripts', 'KARTEN', $params );
 		wp_enqueue_script( 'ktn_scripts' );
 	}
 }
 
-add_action( 'wp_enqueue_scripts', 'ktn_assets' );
-
 /**
  * Construct Instagram API URL
  */
-function ktn_get_query_url( $parameters ) {
-	// @TO-DO: Translate Instagram username to ID
-	$user_id = '2575810';
-	$base_url = 'https://api.instagram.com/v1/users/' . $user_id . '/media/recent?access_token=' . KARTEN_INSTAGRAM_API_KEY;
+function ktn_query_params( $id ) {
+	// Get meta related to ID
+	$map_meta = get_post_meta( $id );
 
-	// array ('count'=>30, 'min_timestamp'=>1352527200, 'max_timestamp'=>1354514400 );
-	// count=30&min_timestamp=1352527200&max_timestamp=1354514400
-	$query_string = http_build_query( $parameters );
+	// Create API query string
+	$parameters = array();
 
-	return $base_url . $query_string;
+	// Users (comma-delimited)
+	if ( ! empty( $map_meta['ktn_meta_users'] ) ) {
+		$parameters['usernames'] = explode( ',', $map_meta['ktn_meta_users'][0] );
+	}
+			
+	// Hashtag (comma-delimited)
+	if ( ! empty( $map_meta['ktn_meta_hashtags'] ) ) {
+		$parameters['hashtags'] = explode( ',', $map_meta['ktn_meta_hashtags'][0] );
+	}
+
+	// Start date
+	if ( ! empty( $map_meta['ktn_meta_start_date'] ) ) {
+		$parameters['start_date'] = strtotime( $map_meta['ktn_meta_start_date'] );
+	}
+
+	// End date
+	if ( ! empty( $map_meta['ktn_meta_end_date'] ) ) {
+		$parameters['end_date'] = strtotime( $map_meta['ktn_meta_end_date'] );
+	}
+
+	// Start addr
+	if ( ! empty( $map_meta['ktn_meta_start_addr'] ) ) {
+		$parameters['start_addr'] = $map_meta['ktn_meta_start_addr'];
+	}
+	
+	// End addr
+	if ( ! empty( $map_meta['ktn_meta_end_addr'] ) ) {
+		$parameters['end_addr'] = $map_meta['ktn_meta_end_addr'];
+	}
+
+	// Max posts
+	if ( ! empty( $map_meta['ktn_meta_max_posts'] ) ) {
+		$parameters['max_posts'] = intval( $map_meta['ktn_meta_max_posts'] );
+	}
+
+	return $parameters;
 }
 
 /**
  * @DONE: Implement shortcode
  * @DONE: Implement template tag
+ * @DONE: Enqueue scripts only when needed
+ *    - Comb post for short code pre-save, add meta array of associated Map post IDs?
+ *    - Check meta for map post IDs when loading page, create URLs and localize, enqueue scripts/styles?
+ * @DONE: Tie short code to scripts
+ * @TO-DO: REformat JS
+ * @TO-DO: Object orientify
  * @TO-DO: Prepare map post meta to have URL constructed
  * @TO-DO: Construct URL
  * @TO-DO: Get Instagram user ID
- * @TO-DO: Enqueue scripts only when needed
- *    - Comb post for short code pre-save, add meta array of associated Map post IDs?
- *    - Check meta for map post IDs when loading page, create URLs and localize, enqueue scripts/styles?
- * @TO-DO: Tie short code to scripts
- * @TO-DO: Object orientify
  * @TO-DO: Use PHPDoc comment formatting: http://make.wordpress.org/core/handbook/inline-documentation-standards/php-documentation-standards/
- * @TO-DO: Help Section (how to get Google Maps API, how to create Instagram client & how to get Instagram API access token, explain cache)
  * @TO-DO: Decide on license
- * @TO-DO: Update README
- * @TO-DO: Create WP README
- * @TO-DO: Review plugin standards, adhere
- * @TO-DO: Create website explaining plugin
+ * @TO-DO: Update README (how to get Google Maps API, how to create Instagram client & how to get Instagram API access token, explain cache)
  * @TO-DO: Code review
  */
-
-
-/**
- * Display a map
- **/
-// function ktn_show_map($args = false) {
-// 	// TO DO: Find proper way to handle args
-// 	if (!$args) {
-// 		// Defaults
-// 		$args = array(
-// 			'users' => array('openapple','pfflyer'), // array (or string?)
-// 			'hashtags' => array('move2012'), // array (or string?)
-// 			'start_date' => '', // undetermined
-// 			'end_date' => '', // undetermined
-// 			'max_posts' => 999, // int
-// 			'height' => 300, // px int % str
-// 			'width' => '100%', // px int or % str
-// 			'max_width' => 'auto', // auto str, px int or % str
-// 			'start_coord' => array(lat, long), // array(lat float, lng float)
-// 			'end_coord' => array(lat, long), // array(lat float, lng float)
-// 			//'center_point' => array(), // empty, array(lat float, lng float) // TO DO
-// 			//'bounds' => array(), // empty, array(lat float, lng float) // TO DO
-// 			//'zoom_level' => 'auto' // auto fit around start_coord, end_coord or int 1-14 around center_point // TO DO
-// 		);
-// 	}
-// }
 
 /**
  * Shortcode to display a map
@@ -524,7 +553,6 @@ function ktn_show_map_shortcode_handler( $atts ) {
 	$has_id = ( is_array( $atts ) && ! empty( $atts['id'] ) ) ? true : false;
 
 	if ( $has_id ) {
-		print_r('has id');
 		ktn_get_map( $atts['id'] );
 	}
 }
@@ -543,8 +571,10 @@ function ktn_map( $id ) {
  **/
 function ktn_get_map( $id ) {
 	// Is the ID numeric? Check for on page meta, options
-	if ( is_numeric( $id ) && ktn_get_opts() && ktn_get_post_meta() ) {
+	if ( is_numeric( $id ) && ktn_get_opts() ) {
+		ktn_enqueue_assets( $id );
+
 		// Return map wrapper
-		return '<div class="map-canvas" data-karten-id="' . $id .'"></div><!-- Karten map -->';
+		return '<div class="map-canvas" data-karten-id="' . esc_attr( $id ) .'"></div><!-- Karten map -->';
 	}
 }

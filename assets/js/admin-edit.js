@@ -3,7 +3,7 @@
 		// Check to make sure the input box exists
 		if ($('.datepicker').length > 0) {
 			// Initilaize datepicker
-			$('.datepicker').datepicker();
+			$('.datepicker').datepicker('getDate');
 		}
 	});
 })(jQuery);
