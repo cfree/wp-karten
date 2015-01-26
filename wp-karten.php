@@ -75,16 +75,30 @@ function ktn_register_settings() {
 
 	// Instagram API client ID
 	add_settings_field(
-		'ktn_instagramapi_client',
+		'ktn_instagramapi_client_id',
 		'Instagram API Client ID',
-		'ktn_instagramapi_client_input_callback',
+		'ktn_instagramapi_client_id_input_callback',
 		'ktn_opts',
 		'ktn_opts_api_keys'
 	);
 
 	register_setting(
 		'ktn_settings_group',
-		'ktn_instagramapi_client'
+		'ktn_instagramapi_client_id'
+	);
+
+	// Instagram API client secret
+	add_settings_field(
+		'ktn_instagramapi_client_secret',
+		'Instagram API Client Secret',
+		'ktn_instagramapi_client_secret_input_callback',
+		'ktn_opts',
+		'ktn_opts_api_keys'
+	);
+
+	register_setting(
+		'ktn_settings_group',
+		'ktn_instagramapi_client_secret'
 	);
 
 	// Instagram API access token
@@ -135,10 +149,16 @@ function ktn_gmapsapi_input_callback() {
 	<?php
 }
 
-function ktn_instagramapi_client_input_callback() {
+function ktn_instagramapi_client_id_input_callback() {
 	?>
-		<input type="text" name="ktn_instagramapi_client" id="ktn_instagramapi_client" size="45" value="<?php echo get_option( 'ktn_instagramapi_client' ); ?>" />
+		<input type="text" name="ktn_instagramapi_client_id" id="ktn_instagramapi_client_id" size="45" value="<?php echo get_option( 'ktn_instagramapi_client_id' ); ?>" />
 		<a href="http://instagram.com/developer/clients/manage/" target="_blank"><?php _e( 'Need a Client ID?', 'ktn' ); ?></a>
+	<?php
+}
+
+function ktn_instagramapi_client_secret_input_callback() {
+	?>
+		<input type="text" name="ktn_instagramapi_client_secret" id="ktn_instagramapi_client_secret" size="45" value="<?php echo get_option( 'ktn_instagramapi_client_secret' ); ?>" />
 	<?php
 }
 
@@ -146,9 +166,11 @@ function ktn_instagramapi_token_input_callback() {
 	$token = get_option( 'ktn_instagramapi_token' );
 	$response = isset( $_GET['code'] ) ? $_GET['code'] : false;
 	$saved = ( isset( $_GET['settings-updated'] ) && $_GET['settings-updated'] == true ) ? $_GET['settings-updated'] : false;
-	$url = trailingslashit( admin_url() ) . 'options-general.php?page=ktn_opts';
-	$encoded_url = urlencode( $url );
+	$redirect_url = trailingslashit( admin_url() ) . 'options-general.php?page=ktn_opts';
+	$encoded_url = urlencode( $redirect_url );
 	$val = '';
+	$client_id = get_option( 'ktn_instagramapi_client_id' );
+	$client_secret = get_option( 'ktn_instagramapi_client_secret' );
 
 	// No token saved or API response?
 	if ( ! $token ) : ?>
@@ -156,8 +178,9 @@ function ktn_instagramapi_token_input_callback() {
 			<h3><?php _e( 'Steps to get Instagram API access:', 'ktn' ); ?></h3>
 			<ol>
 				<li><?php _e( 'Click the "Need a Client ID?" link below and login to Instagram', 'ktn' ); ?></li>
-				<li><?php _e( 'Register a new client and use the following as the REDIRECT URI', 'ktn' ); ?>: <code><?php echo $url; ?></code></li>
-				<li><?php _e( 'Copy new Client\'s ID into the field below', 'ktn' ); ?></li>
+				<li><?php _e( 'Register a new client and use the following as the REDIRECT URI', 'ktn' ); ?>: <code><?php echo $redirect_url; ?></code></li>
+				<li><?php _e( 'Copy new CLIENTS\'s ID and CLIENT\'s SECRET into the fields below', 'ktn' ); ?></li>
+				<li><?php _e( 'Click the "Save Changes" button', 'ktn' ); ?></li>
 				<li><?php _e( 'Click the "Need an Access Token?" link and log into Instagram', 'ktn' ); ?></li>
 				<li><?php _e( 'Copy the Access Token returned and enter it into the Access Token field below', 'ktn' ); ?></li>
 				<li><?php _e( 'Click the "Save Changes" button', 'ktn' ); ?></li>
@@ -165,20 +188,53 @@ function ktn_instagramapi_token_input_callback() {
 		</div>
 	<?php endif;
 
-	// API has responded? 
-	if ( $response && ! $saved ) : ?>
-		<div id="message" class="updated fade">
-			<p>
-				<?php _e( sprintf( 'Your Access Token is: <code>%s</code>', esc_html( $response ) ), 'ktn' ); ?><br/>
-				<?php _e( 'Be sure to copy this into the Access Token field below and save the settings.', 'ktn' ); ?>
-			</p>
-		</div>
-	<?php endif;
+	// API has responded with temp code to get access key
+	if ( $response && ! $saved && $client_id && $client_secret ) {
+		$url = "https://api.instagram.com/oauth/access_token";
+		$access_token_parameters = array(
+			'client_id' => $client_id,
+			'client_secret' => $client_secret,
+			'grant_type' => 'authorization_code',
+			'redirect_uri' => $redirect_url,
+			'code' => $response,
+		);
 
-	if ( $client = get_option( 'ktn_instagramapi_client' ) ) : ?>
+		$curl = curl_init( $url );
+		curl_setopt( $curl, CURLOPT_POST, true );
+		curl_setopt( $curl, CURLOPT_POSTFIELDS, $access_token_parameters );
+		curl_setopt( $curl, CURLOPT_RETURNTRANSFER, 1 );
+		curl_setopt( $curl, CURLOPT_SSL_VERIFYPEER, false );
+		
+		$result = curl_exec( $curl );
+		curl_close( $curl );
+
+		$result = json_decode( $result, true );
+
+		if ( $result && ! empty( $result ) && isset( $result['error_message'] ) ) {
+			?>
+				<div id="message" class="error fade">
+					<p><?php _e( sprintf( 'There\'s been an error: %s', esc_html( $result['error_message'] ) ) ); ?></p>
+				</div>
+			<?php
+		} elseif ( $result && ! empty( $result ) ) {
+			$given_token = isset( $result['access_token'] ) ? $result['access_token'] : false;
+		}
+
+		// API has responded with access key
+		if ( $given_token ) : ?>
+			<div id="message" class="updated fade">
+				<p>
+					<?php _e( sprintf( 'Your Access Token is: <code>%s</code>', esc_html( $given_token ) ), 'ktn' ); ?><br/>
+					<?php _e( 'Be sure to copy this into the Access Token field below and save the settings.', 'ktn' ); ?>
+				</p>
+			</div>
+		<?php endif;
+	}
+
+	if ( $client_id ) : ?>
 			<input type="text" name="ktn_instagramapi_token" id="ktn_instagramapi_token" size="45" value="<?php echo $token; ?>" />
 	<?php
-		echo '<a href="https://instagram.com/oauth/authorize/?client_id=' . $client . '&redirect_uri=' . $encoded_url . '&response_type=code">' . __( 'Need an Access Token?', 'ktn' ) . '</a>';
+		echo '<a href="https://api.instagram.com/oauth/authorize/?client_id=' . $client_id . '&redirect_uri=' . $encoded_url . '&response_type=code">' . __( 'Need an Access Token?', 'ktn' ) . '</a>';
 	endif;
 }
 
@@ -476,7 +532,7 @@ function ktn_enqueue_assets( $id ) {
 		// Scripts
 		wp_enqueue_script( 'ktn_google_maps', '//maps.googleapis.com/maps/api/js?key=' . KARTEN_GMAPS_API_KEY . '&sensor=false', array(), KTN_THEME_VER, false );
 		wp_register_script( 'ktn_scripts', plugins_url( '/assets/js/scripts.js', __FILE__ ), array( 'jquery', 'ktn_google_maps' ), KTN_THEME_VER, true );
-		wp_localize_script( 'ktn_scripts', 'KARTEN', $params );
+		wp_localize_script( 'ktn_scripts', 'KartenData' . $id, $params );
 		wp_enqueue_script( 'ktn_scripts' );
 	}
 }
@@ -491,6 +547,9 @@ function ktn_query_params( $id ) {
 	// Create API query string
 	$parameters = array();
 
+	// Add map ID
+	$parameters['id'] = $id;
+
 	// Users (comma-delimited)
 	if ( ! empty( $map_meta['ktn_meta_users'] ) ) {
 		$parameters['usernames'] = explode( ',', $map_meta['ktn_meta_users'][0] );
@@ -503,28 +562,31 @@ function ktn_query_params( $id ) {
 
 	// Start date
 	if ( ! empty( $map_meta['ktn_meta_start_date'] ) ) {
-		$parameters['start_date'] = strtotime( $map_meta['ktn_meta_start_date'] );
+		$parameters['start_date'] = strtotime( $map_meta['ktn_meta_start_date'][0] );
 	}
 
 	// End date
 	if ( ! empty( $map_meta['ktn_meta_end_date'] ) ) {
-		$parameters['end_date'] = strtotime( $map_meta['ktn_meta_end_date'] );
+		$parameters['end_date'] = strtotime( $map_meta['ktn_meta_end_date'][0] );
 	}
 
 	// Start addr
 	if ( ! empty( $map_meta['ktn_meta_start_addr'] ) ) {
-		$parameters['start_addr'] = $map_meta['ktn_meta_start_addr'];
+		$parameters['start_addr'] = $map_meta['ktn_meta_start_addr'][0];
 	}
 	
 	// End addr
 	if ( ! empty( $map_meta['ktn_meta_end_addr'] ) ) {
-		$parameters['end_addr'] = $map_meta['ktn_meta_end_addr'];
+		$parameters['end_addr'] = $map_meta['ktn_meta_end_addr'][0];
 	}
 
 	// Max posts
 	if ( ! empty( $map_meta['ktn_meta_max_posts'] ) ) {
-		$parameters['max_posts'] = intval( $map_meta['ktn_meta_max_posts'] );
+		$parameters['max_posts'] = intval( $map_meta['ktn_meta_max_posts'][0] );
 	}
+
+	// API keys
+	$parameters['api_keys'] = ktn_get_opts();
 
 	return $parameters;
 }
@@ -535,15 +597,18 @@ function ktn_query_params( $id ) {
  * @DONE: Enqueue scripts only when needed
  *    - Comb post for short code pre-save, add meta array of associated Map post IDs?
  *    - Check meta for map post IDs when loading page, create URLs and localize, enqueue scripts/styles?
+ *    - Enqueue scripts at time of shortcode processing
  * @DONE: Tie short code to scripts
- * @TO-DO: REformat JS
- * @TO-DO: Object orientify
+ * @DONE: Make it easier to get API settings
+ * @TO-DO: Reformat JS
+ * @TO-DO: Use OOJS for multiple maps on 1 page
  * @TO-DO: Prepare map post meta to have URL constructed
- * @TO-DO: Construct URL
- * @TO-DO: Get Instagram user ID
+ * @TO-DO: Construct URLs
+ * @TO-DO: Get Instagram user IDs
+ * @TO-DO: Object orientify
  * @TO-DO: Use PHPDoc comment formatting: http://make.wordpress.org/core/handbook/inline-documentation-standards/php-documentation-standards/
- * @TO-DO: Decide on license
- * @TO-DO: Update README (how to get Google Maps API, how to create Instagram client & how to get Instagram API access token, explain cache)
+ * @DONE: Decide on license: GPL
+ * @DONE: Update README (how to get Google Maps API, how to create Instagram client & how to get Instagram API access token, explain cache)
  * @TO-DO: Code review
  */
 
@@ -576,6 +641,6 @@ function ktn_get_map( $id ) {
 		ktn_enqueue_assets( $id );
 
 		// Return map wrapper
-		return '<div class="map-canvas" data-karten-id="' . esc_attr( $id ) .'"></div><!-- Karten map -->';
+		echo '<div class="ktn-wrapper"><div class="ktn-map-canvas" data-ktn-id="' . esc_attr( $id ) .'"></div></div><!-- Karten map -->';
 	}
 }
