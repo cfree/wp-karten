@@ -216,7 +216,7 @@ function ktn_instagramapi_token_input_callback() {
 					<p><?php _e( sprintf( 'There\'s been an error: %s', esc_html( $result['error_message'] ) ) ); ?></p>
 				</div>
 			<?php
-		} elseif ( $result && ! empty( $result ) ) {
+		} else if ( $result && ! empty( $result ) ) {
 			$given_token = isset( $result['access_token'] ) ? $result['access_token'] : false;
 		}
 
@@ -605,6 +605,7 @@ function ktn_query_params( $id ) {
  * @TO-DO: Prepare map post meta to have URL constructed
  * @TO-DO: Construct URLs
  * @TO-DO: Get Instagram user IDs
+ * @TO-DO: Determine which could be private vs public variable, update
  * @TO-DO: Object orientify
  * @TO-DO: Use PHPDoc comment formatting: http://make.wordpress.org/core/handbook/inline-documentation-standards/php-documentation-standards/
  * @DONE: Decide on license: GPL
