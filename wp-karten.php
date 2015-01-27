@@ -510,7 +510,10 @@ function ktn_get_opts() {
  * Set constants right after WordPress core is loaded
  */
 function ktn_set_opts() {
-	if ( $gmaps = get_option( 'ktn_gmapsapi' ) && $instagram = get_option( 'ktn_instagramapi_token' ) ) {
+	$gmaps = get_option( 'ktn_gmapsapi' );
+	$instagram = get_option( 'ktn_instagramapi_token' );
+
+	if ( $gmaps && $instagram ) {
 		if ( ! defined( 'KARTEN_GMAPS_API_KEY' ) && ! defined( 'KARTEN_INSTAGRAM_API_KEY' ) ) {
 			define( 'KARTEN_GMAPS_API_KEY', $gmaps );
 			define( 'KARTEN_INSTAGRAM_API_KEY', $instagram );
@@ -530,7 +533,7 @@ function ktn_enqueue_assets( $id ) {
 	// Build API queries
 	if ( $params = ktn_query_params( $id ) ) {
 		// Scripts
-		wp_enqueue_script( 'ktn_google_maps', '//maps.googleapis.com/maps/api/js?key=' . KARTEN_GMAPS_API_KEY . '&sensor=false', array(), KTN_THEME_VER, false );
+		wp_enqueue_script( 'ktn_google_maps', '//maps.googleapis.com/maps/api/js?key=' . KARTEN_GMAPS_API_KEY, array(), KTN_THEME_VER, false );
 		wp_register_script( 'ktn_scripts', plugins_url( '/assets/js/scripts.js', __FILE__ ), array( 'jquery', 'ktn_google_maps' ), KTN_THEME_VER, true );
 		wp_localize_script( 'ktn_scripts', 'KartenData' . $id, $params );
 		wp_enqueue_script( 'ktn_scripts' );
@@ -647,6 +650,6 @@ function ktn_get_map( $id ) {
 		ktn_enqueue_assets( $id );
 
 		// Return map wrapper
-		echo '<div class="ktn-wrapper"><div class="ktn-map-canvas" data-ktn-id="' . esc_attr( $id ) .'"></div></div><!-- Karten map -->';
+		echo '<div class="ktn-wrapper"><div class="ktn-map-canvas" data-ktn-id="' . esc_attr( $id ) . '"></div></div><!-- Karten map -->';
 	}
 }
