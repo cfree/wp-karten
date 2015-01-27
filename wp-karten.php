@@ -464,31 +464,31 @@ function ktn_save_meta( $post_id, $post ) {
 
 	// Set new meta
 	foreach ($meta_keys as $field => $meta) {
-		ktn_set_meta( $post_id, $meta, $field );
+		ktn_set_meta( $post_id, $field, $meta );
 	}
 }
 
 /**
  * Set Maps post meta
  */
-function ktn_set_meta( $post_id, $meta_value, $meta_key ) {
+function ktn_set_meta( $post_id, $field, $meta ) {
 	// Get the posted data and sanitize it for use as an HTML class
-	$new_meta_value = ( isset( $_POST[$new_meta_value_string] ) ? $_POST[ sanitize_html_class( $new_meta_value_string ) ] : '' );
+	$new_meta_value = ( isset( $_POST[ $field ] ) ? $_POST[ sanitize_html_class( $field ) ] : false );
 
 	// Get the meta key
-	$meta_value = get_post_meta( $post_id, $meta_key, true );
+	$meta_value = get_post_meta( $post_id, $meta, true );
 
 	// If a new meta value was added and there was no previous value, add it
-	if ( $new_meta_value && '' == $meta_value ) {
-		add_post_meta( $post_id, $meta_key, $new_meta_value, true );
+	if ( $new_meta_value && '' === $meta_value ) {
+		add_post_meta( $post_id, $meta, $new_meta_value, true );
 	}
 	// If there is no new meta value but an old value exists, delete it
-	else if ( empty( $new_meta_value ) && $meta_value ) {
-		delete_post_meta( $post_id, $meta_key, $meta_value );
+	else if ( ! $new_meta_value && $meta_value ) {
+		delete_post_meta( $post_id, $meta, $meta_value );
 	}
 	// If the new meta value does not match the old value, update it
-	else if ( $new_meta_value && $new_meta_value != $meta_value ) {
-		update_post_meta( $post_id, $meta_key, $new_meta_value );
+	else if ( $new_meta_value && $new_meta_value !== $meta_value ) {
+		update_post_meta( $post_id, $meta, $new_meta_value );
 	}
 }
 
@@ -538,7 +538,7 @@ function ktn_enqueue_assets( $id ) {
 }
 
 /**
- * Construct Instagram API URL
+ * Retrieve Instagram API parameters
  */
 function ktn_query_params( $id ) {
 	// Get meta related to ID
@@ -601,15 +601,20 @@ function ktn_query_params( $id ) {
  * @DONE: Tie short code to scripts
  * @DONE: Make it easier to get API settings
  * @TO-DO: Reformat JS
- * @TO-DO: Use OOJS for multiple maps on 1 page
- * @TO-DO: Prepare map post meta to have URL constructed
- * @TO-DO: Construct URLs
- * @TO-DO: Get Instagram user IDs
+ 	* @TO-DO: Use OOJS for multiple maps on 1 page
+ 	* @TO-DO: Construct URLs
+ * @DONE: Get Instagram user IDs
  * @TO-DO: Determine which could be private vs public variable, update
+ * @TO-DO: Bind proper scope where necessary, remove 'scope' variable
+ *
  * @TO-DO: Object orientify
+ * @TO-DO: Fix Start Addr, End Addr, Max number of posts not saving
+ * @TO-DO: Move settings page to inside Maps post type
  * @TO-DO: Use PHPDoc comment formatting: http://make.wordpress.org/core/handbook/inline-documentation-standards/php-documentation-standards/
+ *
  * @DONE: Decide on license: GPL
  * @DONE: Update README (how to get Google Maps API, how to create Instagram client & how to get Instagram API access token, explain cache)
+ *
  * @TO-DO: Code review
  */
 
