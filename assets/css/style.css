@@ -1,81 +1,81 @@
 
-#map_canvas {
-	width: 100%;
-	height: 620px;
+.ktn-map-canvas {
 	box-shadow: 0 10px 25px 0px #292828;
+	height: 620px;
 	margin-bottom: 40px;
+	width: 100%;
 }
 
-.cf-map-bubble {
-	width: 306px;
-	margin-left: 15px; 
+.ktn-map-bubble {
 	float: right;
+	margin-left: 15px;
+	width: 306px;
 }
 
-.cf-map-timestamp {
-	font-size: 10px;
-
+.ktn-map-timestamp {
 	color: #bababa;
+	font-size: 10px;
 }
 
-.cf-map-meta {
+.ktn-map-meta {
 	display: block;
-	padding-right: 18px;
 	font-size: 12px;
+	padding-right: 18px;
 	text-align: right; 
 }
 
-.cf-map-img {
+.ktn-map-img {
 	float: left;
 }
 
-.cf-map-caption {
-	display: block;
+.ktn-map-caption {
 	background: #dedede;
+	display: block;
 	padding: 10px;
 }
 
-.cf-map-user {
+.ktn-map-user {
 	background: url('images/bg-users.png') right center no-repeat;
 	background-size: 15px auto;
 	margin-right: 3px;
 }
 
-.cf-map-location {
-	background: url("images/bg-map.png") right center no-repeat;
+.ktn-map-location {
+	background: url('images/bg-map.png') right center no-repeat;
 	background-size: 10px auto;
 	margin-right: 6px;
 }
 
 
 @media only screen and (max-width: 700px) {
-	.cf-map-img, .cf-map-bubble {
+	.ktn-map-img,
+	.ktn-map-bubble {
 		display: block;
 		float: none;
 	}
 	
-	.cf-map-img {
+	.ktn-map-img {
 		margin-bottom: 5px;
 		max-width: 306px;
 		width: 100%;
 	}
 	
-	.cf-map-bubble {
+	.ktn-map-bubble {
 		margin: 0;
-		width: 100%;
 		max-width: 306px;
+		width: 100%;
 	}
 	
-	#map_canvas {
-		margin: 0 15px 40px;
+	.ktn-map-canvas {
 		display: block;
-		width: auto;
 		height: 500px;
+		margin: 0 15px 40px;
+		width: auto;
 	}
 }
 
 @media only screen and (max-width: 450px) {
-	.cf-map-bubble {
+	.ktn-map-bubble {
 		display: none;
 	}
 }
