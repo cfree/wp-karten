@@ -555,9 +555,9 @@ function ktn_query_params( $id ) {
 		$parameters['usernames'] = explode( ',', $map_meta['ktn_meta_users'][0] );
 	}
 			
-	// Hashtag (comma-delimited)
+	// Hashtag
 	if ( ! empty( $map_meta['ktn_meta_hashtags'] ) ) {
-		$parameters['hashtags'] = explode( ',', $map_meta['ktn_meta_hashtags'][0] );
+		$parameters['hashtags'] = $map_meta['ktn_meta_hashtags'][0];
 	}
 
 	// Start date
