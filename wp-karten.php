@@ -247,8 +247,8 @@ function ktn_custom_post_type() {
 			'labels' => array(
 				'name' => __( 'Maps' ),
 				'singular_name' => __( 'Map' ),
-				'menu_name'          => _x( 'Maps', 'admin menu', 'ktn' ),
-				'name_admin_bar'     => _x( 'Karten Maps', 'add new on admin bar', 'ktn' ),
+				'menu_name'          => _x( 'Karten Maps', 'admin menu', 'ktn' ),
+				'name_admin_bar'     => _x( 'Map', 'add new on admin bar', 'ktn' ),
 				'add_new'            => _x( 'Add New Map', 'map', 'ktn' ),
 				'add_new_item'       => __( 'Add New Map', 'ktn' ),
 				'new_item'           => __( 'New Map', 'ktn' ),
@@ -260,7 +260,7 @@ function ktn_custom_post_type() {
 				'not_found'          => __( 'No maps found.', 'ktn' ),
 				'not_found_in_trash' => __( 'No maps found in Trash.', 'ktn' )
 			),
-			'menu_icon' => 'dashicons-pressthis',
+			'menu_icon' => 'dashicons-location-alt',
 			'public' => false,
 			'has_archive' => false,
 			'publicly_queryable' => true,
