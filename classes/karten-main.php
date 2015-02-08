@@ -145,11 +145,11 @@ class KartenMain {
 	/**
 	 * Shortcode to display a map
 	 **/
-	public function ktn_show_map_shortcode_handler( $atts ) {
+	public function ktn_show_map_shortcode_handler( $atts, $content = null ) {
 		$has_id = ( is_array( $atts ) && ! empty( $atts['id'] ) ) ? true : false;
 
 		if ( $has_id ) {
-			$this::ktn_get_map( $atts['id'] );
+			return $this::ktn_get_map( $atts['id'] );
 		}
 	}
 
@@ -163,13 +163,13 @@ class KartenMain {
 	/**
 	 * Template tag to return a map
 	 **/
-	public function ktn_get_map( $id ) {
+	public function ktn_get_map( $id, $content = null ) {
 		// Is the ID numeric? Check for on page meta, options
 		if ( is_numeric( $id ) && KartenSetup::ktn_get_opts() ) {
 			$this::ktn_enqueue_assets( $id );
 
 			// Return map wrapper
-			echo '<div class="ktn-wrapper"><div class="ktn-map-canvas" data-ktn-id="' . esc_attr( $id ) . '"></div></div><!-- Karten map -->';
+			return '<div class="ktn-wrapper"><div class="ktn-map-canvas" data-ktn-id="' . esc_attr( $id ) . '"></div></div><!-- Karten map -->';
 		}
 	}
 }
