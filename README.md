@@ -10,3 +10,10 @@ A WordPress plugin to plot Instagram posts to a Google Maps maps. This utilizes 
 - Create a new Map, filling out desired options
 - Copy shortcode and insert in desired post/page content
 - Be amazed!
+
+## Template Hook
+To add a map outside of the content in a template file, hook into the `ktn_show_map` action:
+
+```php
+do_action( 'ktn_show_map', $integer );
+```
