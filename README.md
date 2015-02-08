@@ -8,7 +8,7 @@ A WordPress plugin to plot Instagram posts to a Google Maps maps. This utilizes 
 - Create a new client and obtain an [Instagram API Client ID](http://instagram.com/developer/clients/manage/) and save it in the Karten settings
 - Follow the instructions on the Karten settings page to obtain an Instagram API Acces Token, then save it
 - Create a new Map, filling out desired options
-- Copy shortcode and insert in desired post/page content
+- Copy shortcode and insert in desired post/page content or use the [template hook](#template-hook)
 - Be amazed!
 
 ## Template Hook
