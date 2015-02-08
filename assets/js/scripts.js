@@ -7,7 +7,6 @@
 		init: function() {
 			// Do we have markup on the page?
 			var mapWrappers = $('.ktn-wrapper');
-			console.log(mapWrappers);
 
 			if (mapWrappers.length < 1) {
 				return;
@@ -23,7 +22,8 @@
 					return;
 				}
 				else {
-					var map = new Map(mapSettings);
+					console.log(mapSettings);
+					var mapObj = new Map(mapSettings);
 				}
 				
 				// Set infowindow
@@ -51,19 +51,18 @@
 		this.infowindow = null;
 		this.pointsArr = [];
 		this.userIDs = [];
+		this.apiUrls = [];
+		this.apiResults = [];
+
+		var settings = mapSettings;
 
 		// Getters / Setters
-		this.addUserID = function addUserID(id) {
-			this.userIDs.push(id);
-		};
-
-		this.getUserIDs = function getUserIDs() {
-			return this.userIDs;
+		this.getSettings = function getSettings(settings) {
+			return mapSettings;
 		};
 
 		// Go get Instagram user IDs
 		var deferredIds = this.getInstagramUserIds(mapSettings.usernames, this.instagramApiKey),
-			deferredQueries = null,
 			scope = this;
 
 		// When all the IDs are back...
@@ -71,44 +70,56 @@
 			.then(function() {
 				// Create the API endpoint URLs
 				scope.constructUrls(mapSettings);
+				console.log(scope.apiUrls);
 
 				// Go get Instagram data
-				// scope.deferredQueries = scope.retrieveJson(scope.getUserIDs());
+				var deferredQueries = scope.retrieveJson();
+
+				// Once Instagram query results are obtained, map points
+				$.when.apply($, deferredQueries)
+					.then(function() {
+						//scope.addPointsToMap();
+						console.log(scope.apiResults);
+					});
 			})
 			.fail(function() {
 				return false;
 			});
 
-		// @TO-DO: promise
-		var user_cf = this.retrieveJson('https://api.instagram.com/v1/users/2575810/media/recent?count=30&min_timestamp=1352527200&max_timestamp=1354514400&access_token=2575810.b5f685c.afb988a96a2e4267a8f42fe005411afb'); // @openapple
-		var user_pf = this.retrieveJson('https://api.instagram.com/v1/users/223256831/media/recent?count=30&min_timestamp=1352527200&max_timestamp=1354514400&access_token=2575810.b5f685c.afb988a96a2e4267a8f42fe005411afb'); // @pfflyer787		
-
 		// Get the map started
-		// this.setupMap(**);
+		this.setupMap();
+	}
 
-		// Set up start point
-		startLatLng = new google.maps.LatLng(32.753683,-117.143761); // 4181 Florida Street, San Diego, CA
+	/**
+	 * Set the map up
+	 */
+	Map.prototype.setupMap = function() {
+		// Map settings
+		var mapSettings = this.getSettings(),
+
+			// Set up start point
+			startLatLng = new google.maps.LatLng(32.753683,-117.143761), // 4181 Florida Street, San Diego, CA
 	
-		// Set up end point
-		endLatLng = new google.maps.LatLng(39.726486,-104.987536); // 650 N Speer Blvd W, Denver, CO (Towneplace Suites)
+			// Set up end point
+			endLatLng = new google.maps.LatLng(39.726486,-104.987536), // 650 N Speer Blvd W, Denver, CO (Towneplace Suites)
 		
-		// Custom icons
-		icon = "http://www.google.com/intl/en_us/mapfiles/ms/micons/green-dot.png";
+			// Custom icons
+			icon = "http://www.google.com/intl/en_us/mapfiles/ms/micons/green-dot.png";
 
 		// Set up map
-		myOptions = {
+		this.myOptions = {
 			zoom: 15,
 			center: startLatLng,
 			mapTypeId: google.maps.MapTypeId.ROADMAP
 		};
 	 
-		map = new google.maps.Map(document.querySelector('[data-ktn-id="' + mapSettings.id + '"]'), myOptions);
+		this.map = new google.maps.Map(document.querySelector('[data-ktn-id="' + mapSettings.id + '"]'), this.myOptions);
 
-		bounds = new google.maps.LatLngBounds();
+		this.bounds = new google.maps.LatLngBounds();
 
 		// Set up start marker
-		startMarker = new google.maps.Marker({
-			map: map,
+		var startMarker = new google.maps.Marker({
+			map: this.map,
 			position: startLatLng,
 			title: 'Start',
 			icon: icon
@@ -116,14 +127,14 @@
 	 
 		this.markersArray.push(startMarker);
 	 
-		// //startMarker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1); // TO DO: move to admin
+		startMarker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1);
 	
 		// Add each location to bounds
-		bounds.extend(startLatLng);
+		this.bounds.extend(startLatLng);
 		
 		// Set up end marker
-		endMarker = new google.maps.Marker({
-			map: map,
+		var endMarker = new google.maps.Marker({
+			map: this.map,
 			position: endLatLng,
 			title: 'Finish',
 			icon: icon
@@ -131,71 +142,10 @@
 	 
 		this.markersArray.push(endMarker);
 	 
-		// //endMarker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1);  // TO DO: move to admin
-	
-		// // Add each location to bounds
-		// //bounds.extend(endLatLng);
-					
-		// Once Instagram query results are obtained, map points
-		$.when(deferredQueries)
-			.then(function() {
-				//addPointsToMap();
-			})
-			.fail(function() {
-				return false;
-			});
-	}
-
-	/**
-	 * Setup the map
-	 */
-	Map.prototype.setupMap = function(mapData) {
-		// Set up start point
-		var startLatLng = new google.maps.LatLng(32.753683,-117.143761),
-	
-			// Set up end point
-			endLatLng = new google.maps.LatLng(39.726486,-104.987536),
-		
-			// Custom icons
-			icon = "http://www.google.com/intl/en_us/mapfiles/ms/micons/green-dot.png";
-
-		// Map settings
-		myOptions = {
-			zoom: 15,
-			center: startLatLng,
-			mapTypeId: google.maps.MapTypeId.ROADMAP
-		};
-	 
-		// Set the map container
-		map = new google.maps.Map(document.querySelector('[data-ktn-id=' + mapData.id + ']'), myOptions);
-
-		// Set the bounds of the map
-		bounds = new google.maps.LatLngBounds();
-
-		// Set up start marker
-		var startMarker = new google.maps.Marker({
-			map: this.mapObj,
-			position: startLatLng,
-			title: 'Start',
-			icon: this.icon
-		});
-	 
-		markersArray.push(startMarker);
-	 
-		// //startMarker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1); // TO DO: move to admin
+		endMarker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1);
 	
 		// Add each location to bounds
-		bounds.extend(startLatLng);
-		
-		// Set up end marker
-		var endMarker = new google.maps.Marker({
-			map: this.mapObj,
-			position: endLatLng,
-			title: 'Finish',
-			icon: this.icon
-		});
-	 
-		markersArray.push(endMarker);
+		this.bounds.extend(endLatLng);
 	};
 
 	/**
@@ -229,30 +179,52 @@
 	};
 
 	/**
-	 * Create query string and retrive data from Instagram API
+	 * Create endpoint URL for use with Instagram API
 	 */
 	Map.prototype.constructUrls = function(settings) {
-		console.log(settings);
-		console.log(this.userIDs);
-		var apiUrls = [];
+		var queryString = '';
 
-		// Translate Instagram username to ID
-		for (var user in this.userIDs) {
-			apiUrls.push('https://api.instagram.com/v1/users/' + user.id + '/media/recent?access_token=' + this.instagramApiKey);
+		// Start date
+		if (typeof settings.start_date === 'string') {
+			queryString += '&min_timestamp=' + settings.start_date;
 		}
 
-		return false;
+		// End date
+		if (typeof settings.end_date === 'string') {
+			queryString += '&max_timestamp=' + settings.end_date;
+		}
+
+		// Number of posts
+		if (typeof settings.end_date === 'string') {
+			queryString += '&count=' + settings.max_posts;
+		}
+
+		// Create endpoint URL
+		for (var user in settings.usernames) {
+			this.apiUrls.push('https://api.instagram.com/v1/users/' + this.userIDs[settings.usernames[user]] + '/media/recent?access_token=' + this.instagramApiKey + queryString);
+		}
 	};
 
 	/**
 	 * Go get the Instagram data
 	 */
-	Map.prototype.retrieveJson = function(url) {
-		// Get JSON
-		return $.ajax({
-			url: url,
-			dataType: 'jsonp',
-			cache: false
+	Map.prototype.retrieveJson = function() {
+		var dataDeffereds = [],
+			scope = this;
+
+		$.each(this.apiUrls, function(index, url) {
+			dataDeffereds.push(
+				$.ajax({
+					url: url,
+					dataType: 'jsonp',
+					cache: false
+				})
+					.success(function(results) {
+						if (typeof results.data === 'array' && results.data.length > 0) {
+							scope.apiResults.push(results.data);
+						}
+					})
+			);
 		});
 	};
 
@@ -321,21 +293,21 @@
 	 */
 	Map.prototype.listenMarker = function(mapObj, marker) {
 		// Get image (medium)
-		var addressString = "<img class='ktn-map-img' src='" + mapObj.images.low_resolution.url + "' alt=''/>";
+		var addressString = "<img class='ktn-map-img' src='" + mapObj.images.low_resolution.url + "' alt=''/>",
 		
-		// Parse date information
-		var date = new Date(mapObj.created_time * 1000);
-		var month = date.getMonth();
-		var day = date.getDate();
-		var year = date.getFullYear();
-		var hours = date.getHours();
-		var minutes = date.getMinutes();
+			// Parse date information
+			date = new Date(mapObj.created_time * 1000),
+			month = date.getMonth(),
+			day = date.getDate(),
+			year = date.getFullYear(),
+			hours = date.getHours(),
+			minutes = date.getMinutes(),
 		
-		// Create date string
-		var dateString = (month + 1) + "/" + day + "/" + year + " " + hours + ":" + minutes + "hrs";
+			// Create date string
+			dateString = (month + 1) + "/" + day + "/" + year + " " + hours + ":" + minutes + "hrs",
 		
-		// Get caption
-		var captionString = "";
+			// Get caption
+			captionString = "";
 		
 		if (mapObj.caption !== null) {
 			captionString = mapObj.caption.text;
@@ -349,7 +321,7 @@
 		}
 		
 		// Infowindow HTML
-		var imgString = addressString + '<div class="cf-map-bubble"><span class="cf-map-timestamp">' + dateString + '</span><div class="cf-map-caption">' + captionString + '</div><span class="cf-map-user cf-map-meta">@' + mapObj.user.username + '</span><span class="cf-map-location cf-map-meta">' + locationString + '</span></div>';
+		var imgString = addressString + '<div class="ktn-map-bubble"><span class="ktn-map-timestamp">' + dateString + '</span><div class="ktn-map-caption">' + captionString + '</div><span class="ktn-map-user ktn-map-meta">@' + mapObj.user.username + '</span><span class="ktn-map-location ktn-map-meta">' + locationString + '</span></div>';
 		
 		// Create infowindow
 		google.maps.event.addListener(marker, 'click', function() {

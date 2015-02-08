@@ -6,9 +6,11 @@
 	width: 100%;
 }
 
+.ktn-map-canvas img {
+	max-width: none !important;
+}
+
 .ktn-map-bubble {
-	float: right;
-	margin-left: 15px;
 	width: 306px;
 }
 
@@ -35,17 +37,16 @@
 }
 
 .ktn-map-user {
-	background: url('images/bg-users.png') right center no-repeat;
+	background: url('../img/bg-users.png') right center no-repeat;
 	background-size: 15px auto;
 	margin-right: 3px;
 }
 
 .ktn-map-location {
-	background: url('images/bg-map.png') right center no-repeat;
+	background: url('../img/bg-map.png') right center no-repeat;
 	background-size: 10px auto;
 	margin-right: 6px;
 }
-
 
 @media only screen and (max-width: 700px) {
 	.ktn-map-img,
