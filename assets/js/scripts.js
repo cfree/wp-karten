@@ -285,6 +285,8 @@
 	 * Infowindow
 	 */
 	Map.prototype.listenMarker = function(mapObj, marker) {
+		var scope = this;
+
 		// Get location name
 		var locationString = '';
 		
@@ -319,13 +321,14 @@
 		// Create infowindow
 		google.maps.event.addListener(marker, 'click', function() {
 			// Close infowindow if one is open
-			if (this.infowindow) {
-				this.infowindow.close();
+			if (scope.infowindow) {
+				scope.infowindow.close();
 			}
+
 			// Set infowindow
-			this.infowindow = new google.maps.InfoWindow();
-			this.infowindow.setContent(imgString);
-			this.infowindow.open(this.map, marker);
+			scope.infowindow = new google.maps.InfoWindow();
+			scope.infowindow.setContent(imgString);
+			scope.infowindow.open(scope.map, marker);
 		});
 	};
 	
