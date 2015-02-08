@@ -392,24 +392,24 @@ function ktn_meta_box_view( $object, $box ) {
 
 	?>
 	<p>
-		<label class="req" for="ktn-meta-users"><?php _e( 'User', 'ktn' ); ?></label>
+		<label class="req" for="ktn-meta-users"><?php _e( 'Users <small>(seperate by comma)</small>', 'ktn' ); ?></label>
 		<br />
 		<input class="widefat" type="text" name="ktn-meta-users" id="ktn-meta-users" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_users', true ) ); ?>" size="30" />
 	</p>
 	<p>
 		<label class="req" for="ktn-meta-hashtags"><?php _e( 'Hashtag <small>(don\'t include #)</small>', 'ktn' ); ?></label>
 		<br />
-		<input class="widefat" type="text" name="ktn-meta-hashtags" id="ktn-meta-hashtags" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_hashtags', true ) ); ?>" size="30" />
+		<input size="20" type="text" name="ktn-meta-hashtags" id="ktn-meta-hashtags" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_hashtags', true ) ); ?>" size="30" />
 	</p>
 	<p>
 		<label class="req" for="ktn-meta-start-date"><?php _e( 'Start Date', 'ktn' ); ?></label>
 		<br />
-		<input size="20" type="text" name="ktn-meta-start-date" id="ktn-meta-start-date" class="datepicker" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_start_date', true ) ); ?>" size="30" />
+		<input size="20" type="text" name="ktn-meta-start-date" id="ktn-meta-start-date" class="ktn-datepicker" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_start_date', true ) ); ?>" size="30" />
 	</p>
 	<p>
 		<label class="req" for="ktn-meta-end-date"><?php _e( 'End Date', 'ktn' ); ?></label>
 		<br />
-		<input size="20" type="text" name="ktn-meta-end-date" id="ktn-meta-end-date" class="datepicker" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_end_date', true ) ); ?>" size="30" />
+		<input size="20" type="text" name="ktn-meta-end-date" id="ktn-meta-end-date" class="ktn-datepicker" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_end_date', true ) ); ?>" size="30" />
 	</p>
 	<p>
 		<label class="req" for="ktn-meta-start-addr"><?php _e( 'Start Address', 'ktn' ); ?></label>
