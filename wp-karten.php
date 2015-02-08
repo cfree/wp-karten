@@ -41,29 +41,3 @@ load_plugin_textdomain( 'ktn' );
  */ 
 include plugin_dir_path( __FILE__ ) . 'classes/karten-setup.php';
 include plugin_dir_path( __FILE__ ) . 'classes/karten-main.php';
-
-/**
- * @DONE: Implement shortcode
- * @DONE: Implement template tag
- * @DONE: Enqueue scripts only when needed
- *    - Comb post for short code pre-save, add meta array of associated Map post IDs?
- *    - Check meta for map post IDs when loading page, create URLs and localize, enqueue scripts/styles?
- *    - Enqueue scripts at time of shortcode processing
- * @DONE: Tie short code to scripts
- * @DONE: Make it easier to get API settings
- * @DONE: Reformat JS
- 	* @DONE: Use OOJS for multiple maps on 1 page
- 	* @DONE: Construct URLs
- * @DONE: Get Instagram user IDs
- * @DONE: Determine which could be private vs public variable, update
- * @TO-DO: Bind proper scope where necessary, remove 'scope' variable
- *
- * @TO-DO: Object orientify
- * @DONE: Fix Start Addr, End Addr, Max number of posts not saving
- * @DONE: Move settings page to inside Maps post type
- *
- * @DONE: Decide on license: GPL
- * @DONE: Update README (how to get Google Maps API, how to create Instagram client & how to get Instagram API access token, explain cache)
- *
- * @TO-DO: Code review
- */
