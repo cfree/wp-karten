@@ -10,9 +10,3 @@ A WordPress plugin to plot Instagram posts to a Google Maps maps. This utilizes 
 - Create a new Map, filling out desired options
 - Copy shortcode and insert in desired post/page content
 - Be amazed!
-
-## Features Wishlist
-- Set zooming level from admin
-- Set custom icons from admin
-- Set map type from admin
-- Choose icon colors from admin
