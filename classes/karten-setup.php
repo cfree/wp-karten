@@ -153,7 +153,7 @@ class KartenSetup {
 		$token = get_option( 'ktn_instagramapi_token' );
 		$response = isset( $_GET['code'] ) ? $_GET['code'] : false;
 		$saved = ( isset( $_GET['settings-updated'] ) && $_GET['settings-updated'] == true ) ? $_GET['settings-updated'] : false;
-		$redirect_url = trailingslashit( admin_url() ) . 'options-general.php?page=ktn_opts';
+		$redirect_url = trailingslashit( admin_url() ) . 'edit.php?post_type=ktn_map&page=ktn_opts';
 		$encoded_url = urlencode( $redirect_url );
 		$val = '';
 		$client_id = get_option( 'ktn_instagramapi_client_id' );
