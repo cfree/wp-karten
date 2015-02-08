@@ -40,7 +40,7 @@ load_plugin_textdomain( 'ktn' );
  */
 function ktn_options_setup() {
 	// Create new settings section
-	add_options_page( 'Karten Settings', 'Karten', 'administrator', 'ktn_opts', 'ktn_options_view' );
+	add_submenu_page( 'edit.php?post_type=ktn_map', 'Settings', 'Settings', 'manage_options', 'ktn_opts', 'ktn_options_view' );
 
 	// Call register settings function
 	add_action( 'admin_init', 'ktn_register_settings' );
@@ -246,13 +246,26 @@ function ktn_custom_post_type() {
 		array(
 			'labels' => array(
 				'name' => __( 'Maps' ),
-				'singular_name' => __( 'Map' )
+				'singular_name' => __( 'Map' ),
+				'menu_name'          => _x( 'Maps', 'admin menu', 'ktn' ),
+				'name_admin_bar'     => _x( 'Karten Maps', 'add new on admin bar', 'ktn' ),
+				'add_new'            => _x( 'Add New Map', 'map', 'ktn' ),
+				'add_new_item'       => __( 'Add New Map', 'ktn' ),
+				'new_item'           => __( 'New Map', 'ktn' ),
+				'edit_item'          => __( 'Edit Map', 'ktn' ),
+				'view_item'          => __( 'View Map', 'ktn' ),
+				'all_items'          => __( 'All Maps', 'ktn' ),
+				'search_items'       => __( 'Search Maps', 'ktn' ),
+				'parent_item_colon'  => __( 'Parent Maps:', 'ktn' ),
+				'not_found'          => __( 'No maps found.', 'ktn' ),
+				'not_found_in_trash' => __( 'No maps found in Trash.', 'ktn' )
 			),
 			'menu_icon' => 'dashicons-pressthis',
-			'public' => true,
-			'has_archive' => true,
-			'publicly_queryable' => false,
+			'public' => false,
+			'has_archive' => false,
+			'publicly_queryable' => true,
 			'show_in_nav_menus' => false,
+			'show_ui' => true,
 			'supports' => array(
 				'title',
 			)
@@ -392,7 +405,7 @@ function ktn_meta_box_view( $object, $box ) {
 
 	?>
 	<p>
-		<label class="req" for="ktn-meta-users"><?php _e( 'Users <small>(seperate by comma)</small>', 'ktn' ); ?></label>
+		<label class="req" for="ktn-meta-users"><?php _e( 'Users <small>(seperate by comma, must be a public user account)</small>', 'ktn' ); ?></label>
 		<br />
 		<input class="widefat" type="text" name="ktn-meta-users" id="ktn-meta-users" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_users', true ) ); ?>" size="30" />
 	</p>
@@ -603,15 +616,15 @@ function ktn_query_params( $id ) {
  *    - Enqueue scripts at time of shortcode processing
  * @DONE: Tie short code to scripts
  * @DONE: Make it easier to get API settings
- * @TO-DO: Reformat JS
- 	* @TO-DO: Use OOJS for multiple maps on 1 page
- 	* @TO-DO: Construct URLs
+ * @DONE: Reformat JS
+ 	* @DONE: Use OOJS for multiple maps on 1 page
+ 	* @DONE: Construct URLs
  * @DONE: Get Instagram user IDs
- * @TO-DO: Determine which could be private vs public variable, update
+ * @DONE: Determine which could be private vs public variable, update
  * @TO-DO: Bind proper scope where necessary, remove 'scope' variable
  *
  * @TO-DO: Object orientify
- * @TO-DO: Fix Start Addr, End Addr, Max number of posts not saving
+ * @DONE: Fix Start Addr, End Addr, Max number of posts not saving
  * @TO-DO: Move settings page to inside Maps post type
  * @TO-DO: Use PHPDoc comment formatting: http://make.wordpress.org/core/handbook/inline-documentation-standards/php-documentation-standards/
  *
