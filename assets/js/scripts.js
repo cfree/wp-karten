@@ -1,6 +1,7 @@
 (function($) {
 	
 	var KartenApp = {
+
 		/**
 		 * Initialize the app
 		 */
@@ -22,7 +23,7 @@
 					return;
 				}
 				else {
-					var mapObj = new Map(mapSettings);
+					window['KartenData' + mapId].map = new KartenMap(mapSettings);
 				}
 			});
 		}
@@ -33,10 +34,10 @@
 		KartenApp.init();
 	});
 
-	//////////////////////////////////////////////////////////////////
+
 
 	// Create template
-	function Map(mapSettings) {
+	function KartenMap(mapSettings) {
 		this.data = [];
 		this.instagramApiKey = mapSettings.api_keys.instagram;
 		this.geocoder = null;
@@ -52,18 +53,15 @@
 		this.settings = mapSettings;
 		this.infowindow = null;
 
-		// Get the map started
-		this.setupMap();
-
 		// Go get Instagram user IDs
-		var deferredIds = this.getInstagramUserIds(this.settings.usernames, this.instagramApiKey),
+		var deferredIds = this.getInstagramUserIds(),
 			scope = this;
 
 		// When all the IDs are back...
 		$.when.apply($, deferredIds)
 			.then(function() {
 				// Create the API endpoint URLs
-				scope.constructUrls(this.settings);
+				scope.constructUrls();
 			})
 			.then(function() {
 				// Go get Instagram data
@@ -72,7 +70,8 @@
 				// Once Instagram query results are obtained, map points
 				$.when.apply($, deferredQueries)
 					.then(function() {
-						scope.addPoints(scope.apiResults);
+						// Get the map started
+						scope.setupMap();
 					});
 			})
 			.fail(function() {
@@ -83,73 +82,170 @@
 	/**
 	 * Set the map up
 	 */
-	Map.prototype.setupMap = function() {
-		// Map settings
-		var mapSettings = this.settings,
+	KartenMap.prototype.setupMap = function() {
+		// Add the rest of the data points to the map
+		var pointsResult = this.addPoints();
 
-			// Set up start point
-			startLatLng = new google.maps.LatLng(32.753683,-117.143761), // 4181 Florida Street, San Diego, CA
+		if (pointsResult) {
+			var scope = this,
+				icon = "http://www.google.com/intl/en_us/mapfiles/ms/micons/green-dot.png",
+				startMarker = false,
+				startLatLng,
+				endMarker = false,
+				endLatLng,
+				geocoder = new google.maps.Geocoder();
+
+			// Set up map
+			this.myOptions = {
+				zoom: 15,
+				center: this.settings.startLatLng,
+				mapTypeId: google.maps.MapTypeId.ROADMAP
+			};
+		 
+			this.map = new google.maps.Map(document.querySelector('[data-ktn-id="' + this.settings.id + '"]'), this.myOptions);
+
+			this.bounds = new google.maps.LatLngBounds();
+
+			// Addresses?
+			if (this.settings.start_addr) {
+				geocoder.geocode( { 'address': this.settings.start_addr }, function(results, status) {
+					if (status == google.maps.GeocoderStatus.OK) {
+						startLatLng = results[0].geometry.location;
+
+						// Add start location to bounds
+						scope.bounds.extend(startLatLng);
+
+						// Set up start marker
+						startMarker = new google.maps.Marker({
+							map: scope.map,
+							position: startLatLng,
+							title: 'Start',
+							icon: icon
+						});
+
+						scope.markersArray.push(startMarker);
+
+						scope.map.fitBounds(scope.bounds);
+					}
+				});
+			}
+
+			if (this.settings.end_addr) {
+				geocoder.geocode( { 'address': this.settings.end_addr }, function(results, status) {
+					if (status == google.maps.GeocoderStatus.OK) {
+						endLatLng = results[0].geometry.location;
+
+						// Add end location to bounds
+						scope.bounds.extend(endLatLng);
+
+						// Set up start marker
+						endMarker = new google.maps.Marker({
+							map: scope.map,
+							position: endLatLng,
+							title: 'Finish',
+							icon: icon
+						});
+
+						scope.markersArray.push(endMarker);
+
+						scope.map.fitBounds(scope.bounds);
+					}
+				});
+			}
+
+			$('[data-ktn-id="' + this.settings.id + '"]').parent('.ktn-wrapper').addClass('ktn-show');
+
+			this.addPointsToMap();
+		}
+	};
+
+	/**
+	 * Add points to the list of points
+	 */
+	KartenMap.prototype.addPoints = function() {
+		var mapWrapper = this.apiResults,
+			maps = mapWrapper[0];
+
+		for (var map in maps) {
+			// Has location data?
+			if (maps[map].location !== undefined) {
+				// Is hashtag needed?
+				if (this.settings.hashtags !== undefined) {
+					if (maps[map].tags !== undefined && maps[map].tags.length > 0) {
+						var tags = maps[map].tags;
+						// Cycle through all hashtags
+						for (var tag in tags) {
+							// Find desired hashtag
+							if (tags[tag] === this.settings.hashtags) {
+								// Save to array
+								this.pointsArr.push(maps[map]);
+							}
+						}
+					}
+				}
+				// No hashtag needed
+				else {
+					// Save to array
+					this.pointsArr.push(maps[map]);
+				}
+			}
+		}
+
+		if (this.pointsArr.length > 0) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	};
+
+	/**
+	 * Add the points to a map
+	 */
+	KartenMap.prototype.addPointsToMap = function() {
+		// Create points for each element in object
+		for (var point in this.pointsArr) {
+			// Create location from lat and lng
+			var location = new google.maps.LatLng(
+				this.pointsArr[point].location.latitude,
+				this.pointsArr[point].location.longitude
+			);
 	
-			// Set up end point
-			endLatLng = new google.maps.LatLng(39.726486,-104.987536), // 650 N Speer Blvd W, Denver, CO (Towneplace Suites)
+			// Add to bounds
+			this.bounds.extend(location);
+			
+			// Create our "tiny" marker icon
+			var mapIcon = "http://www.google.com/intl/en_us/mapfiles/ms/micons/purple-dot.png";
+			
+			var locMarker = new google.maps.Marker({
+				map: this.map,
+				position: location,
+				icon: mapIcon
+			});
+	
+			// Add to array
+			this.markersArray.push(locMarker);
+	
+			// Add infowindow
+			this.listenMarker(this.pointsArr[point], locMarker);
+		}
 		
-			// Custom icons
-			icon = "http://www.google.com/intl/en_us/mapfiles/ms/micons/green-dot.png";
-
-		// Set up map
-		this.myOptions = {
-			zoom: 15,
-			center: startLatLng,
-			mapTypeId: google.maps.MapTypeId.ROADMAP
-		};
-	 
-		this.map = new google.maps.Map(document.querySelector('[data-ktn-id="' + mapSettings.id + '"]'), this.myOptions);
-
-		this.bounds = new google.maps.LatLngBounds();
-
-		// Set up start marker
-		var startMarker = new google.maps.Marker({
-			map: this.map,
-			position: startLatLng,
-			title: 'Start',
-			icon: icon
-		});
-	 
-		this.markersArray.push(startMarker);
-	 
-		// startMarker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1);
-	
-		// Add each location to bounds
-		this.bounds.extend(startLatLng);
-		
-		// Set up end marker
-		var endMarker = new google.maps.Marker({
-			map: this.map,
-			position: endLatLng,
-			title: 'Finish',
-			icon: icon
-		});
-	 
-		this.markersArray.push(endMarker);
-	 
-		// endMarker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1);
-	
-		// Add each location to bounds
-		this.bounds.extend(endLatLng);
+		// Fix zoom to include all points
+		this.map.fitBounds(this.bounds);
 	};
 
 	/**
 	 * Retrieve Instagram user IDs
 	 */
-	Map.prototype.getInstagramUserIds = function(usernames, instagramApiKey) {
+	KartenMap.prototype.getInstagramUserIds = function() {
 		var userIdDeffereds = [],
 			scope = this;
 
 		// For each username, retrieve it's ID from Instagram
-		$.each(usernames, function(index, name) {
+		$.each(this.settings.usernames, function(index, name) {
 			name = name.trim();
 			name = name.toLowerCase();
-			var instagramUrl = 'https://api.instagram.com/v1/users/search?q=' + name + '&access_token=' + instagramApiKey + '&count=1';
+			var instagramUrl = 'https://api.instagram.com/v1/users/search?q=' + name + '&access_token=' + scope.instagramApiKey + '&count=1';
 
 			userIdDeffereds.push(
 				$.ajax({
@@ -158,8 +254,7 @@
 				})
 					.success(function(results) {
 						if (results.data.length > 0) {
-							var data = results.data[0];
-							scope.userIDs[name] = data.id;
+							scope.userIDs[name] = results.data[0].id;
 						}
 					})
 			);
@@ -171,7 +266,7 @@
 	/**
 	 * Create endpoint URL for use with Instagram API
 	 */
-	Map.prototype.constructUrls = function(settings) {
+	KartenMap.prototype.constructUrls = function() {
 		var queryString = '';
 
 		// Start date
@@ -198,7 +293,7 @@
 	/**
 	 * Go get the Instagram data
 	 */
-	Map.prototype.retrieveJson = function() {
+	KartenMap.prototype.retrieveJson = function() {
 		var dataDeffereds = [],
 			scope = this;
 
@@ -221,70 +316,9 @@
 	};
 
 	/**
-	 * Add points to the animateProvider
-	 */
-	Map.prototype.addPoints = function(mapWrapper) {
-		console.log(mapWrapper[0]);
-		if (mapWrapper[0].length) {
-			var maps = mapWrapper[0];
-
-			for (var map in maps) {
-				// Has location data
-				if (maps[map].location !== undefined) {
-					// If has hashtag
-					if (maps[map].tags.length > 0 && this.settings.hashtags.length) {
-						// Cycle through all hashtags
-						for (var tag in maps[map].tags) {
-							// Find desired hashtag
-							if (maps[map].tags[tag] === this.settings.hashtags) {
-								// Save to array
-								this.pointsArr.push(maps[map]);
-							}
-						}
-					}
-				}
-			}
-
-			this.addPointsToMap();
-		}
-	};
-
-	/**
-	 * Add the points to a map
-	 */
-	Map.prototype.addPointsToMap = function() {
-		// Create points for each element in object
-		for(var j = 0; j < this.pointsArr.length; j++) {
-			// Create location from lat and lng
-			var location = new google.maps.LatLng(this.pointsArr[j].location.latitude, this.pointsArr[j].location.longitude);
-	
-			// Add to bounds
-			this.bounds.extend(location);
-			
-			// Create our "tiny" marker icon
-			var mapIcon = "http://www.google.com/intl/en_us/mapfiles/ms/micons/purple-dot.png";
-			
-			var locMarker = new google.maps.Marker({
-				map: this.map,
-				position: location,
-				icon: mapIcon
-			});
-	
-			// Add to array
-			this.markersArray.push(locMarker);
-	
-			// Add infowindow
-			this.listenMarker(this.pointsArr[j], locMarker);
-		}
-		
-		// Fix zoom to include all points
-		this.map.fitBounds(this.bounds);
-	};
-
-	/**
 	 * Infowindow
 	 */
-	Map.prototype.listenMarker = function(mapObj, marker) {
+	KartenMap.prototype.listenMarker = function(mapObj, marker) {
 		var scope = this;
 
 		// Get location name
