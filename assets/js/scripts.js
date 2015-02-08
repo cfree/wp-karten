@@ -15,11 +15,18 @@
 
 			// Run through each map instance on the page
 			mapWrappers.each(function(index, value) {
-				var mapId = $(value).find('.ktn-map-canvas').attr('data-ktn-id'),
+				var mapInstance = $(value).find('.ktn-map-canvas'),
+					mapId = mapInstance.attr('data-ktn-id'),
 					mapSettings = window['KartenData' + mapId];
 
-				// Do we have settings data?
-				if (mapSettings.length < 1) {
+				// Do we have settings data? Is the mapSettings.map already in use? (Indicates more than one usage of an ID)
+				if (typeof mapSettings === 'undefined') {
+					console.log('mapSettings of ' + mapId + ' not found');
+					return;
+				}
+				else if (typeof mapSettings !== 'undefined' && typeof mapSettings.map !== 'undefined') {
+					$(value).hide();
+					console.log('Map ID #' + mapId + ' is already in use on the page. Hiding all subsequent instances.');
 					return;
 				}
 				else {
@@ -33,8 +40,6 @@
 	$(document).ready(function() {
 		KartenApp.init();
 	});
-
-
 
 	// Create template
 	function KartenMap(mapSettings) {
