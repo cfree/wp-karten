@@ -22,12 +22,8 @@
 					return;
 				}
 				else {
-					console.log(mapSettings);
 					var mapObj = new Map(mapSettings);
 				}
-				
-				// Set infowindow
-				// // infoWindow = new google.maps.InfoWindow();
 			});
 		}
 	};
@@ -53,41 +49,35 @@
 		this.userIDs = [];
 		this.apiUrls = [];
 		this.apiResults = [];
+		this.settings = mapSettings;
+		this.infowindow = null;
 
-		var settings = mapSettings;
-
-		// Getters / Setters
-		this.getSettings = function getSettings(settings) {
-			return mapSettings;
-		};
+		// Get the map started
+		this.setupMap();
 
 		// Go get Instagram user IDs
-		var deferredIds = this.getInstagramUserIds(mapSettings.usernames, this.instagramApiKey),
+		var deferredIds = this.getInstagramUserIds(this.settings.usernames, this.instagramApiKey),
 			scope = this;
 
 		// When all the IDs are back...
 		$.when.apply($, deferredIds)
 			.then(function() {
 				// Create the API endpoint URLs
-				scope.constructUrls(mapSettings);
-				console.log(scope.apiUrls);
-
+				scope.constructUrls(this.settings);
+			})
+			.then(function() {
 				// Go get Instagram data
 				var deferredQueries = scope.retrieveJson();
 
 				// Once Instagram query results are obtained, map points
 				$.when.apply($, deferredQueries)
 					.then(function() {
-						//scope.addPointsToMap();
-						console.log(scope.apiResults);
+						scope.addPoints(scope.apiResults);
 					});
 			})
 			.fail(function() {
 				return false;
 			});
-
-		// Get the map started
-		this.setupMap();
 	}
 
 	/**
@@ -95,7 +85,7 @@
 	 */
 	Map.prototype.setupMap = function() {
 		// Map settings
-		var mapSettings = this.getSettings(),
+		var mapSettings = this.settings,
 
 			// Set up start point
 			startLatLng = new google.maps.LatLng(32.753683,-117.143761), // 4181 Florida Street, San Diego, CA
@@ -127,7 +117,7 @@
 	 
 		this.markersArray.push(startMarker);
 	 
-		startMarker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1);
+		// startMarker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1);
 	
 		// Add each location to bounds
 		this.bounds.extend(startLatLng);
@@ -142,7 +132,7 @@
 	 
 		this.markersArray.push(endMarker);
 	 
-		endMarker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1);
+		// endMarker.setZIndex(google.maps.Marker.MAX_ZINDEX + 1);
 	
 		// Add each location to bounds
 		this.bounds.extend(endLatLng);
@@ -185,23 +175,23 @@
 		var queryString = '';
 
 		// Start date
-		if (typeof settings.start_date === 'string') {
-			queryString += '&min_timestamp=' + settings.start_date;
+		if (typeof this.settings.start_date === 'string') {
+			queryString += '&min_timestamp=' + this.settings.start_date;
 		}
 
 		// End date
-		if (typeof settings.end_date === 'string') {
-			queryString += '&max_timestamp=' + settings.end_date;
+		if (typeof this.settings.end_date === 'string') {
+			queryString += '&max_timestamp=' + this.settings.end_date;
 		}
 
 		// Number of posts
-		if (typeof settings.end_date === 'string') {
-			queryString += '&count=' + settings.max_posts;
+		if (typeof this.settings.end_date === 'string') {
+			queryString += '&count=' + this.settings.max_posts;
 		}
 
 		// Create endpoint URL
-		for (var user in settings.usernames) {
-			this.apiUrls.push('https://api.instagram.com/v1/users/' + this.userIDs[settings.usernames[user]] + '/media/recent?access_token=' + this.instagramApiKey + queryString);
+		for (var user in this.settings.usernames) {
+			this.apiUrls.push('https://api.instagram.com/v1/users/' + this.userIDs[this.settings.usernames[user]] + '/media/recent?access_token=' + this.instagramApiKey + queryString);
 		}
 	};
 
@@ -220,80 +210,90 @@
 					cache: false
 				})
 					.success(function(results) {
-						if (typeof results.data === 'array' && results.data.length > 0) {
+						if (results.data.length > 0) {
 							scope.apiResults.push(results.data);
 						}
 					})
 			);
 		});
+
+		return dataDeffereds;
 	};
 
 	/**
 	 * Add points to the animateProvider
 	 */
-	Map.prototype.addPoints = function(mapObj) {
-		// Store objects in one array if they have a location set
-		// @TO-DO: Clean this up
-		for (var i = 0; i < mapObj[0].data.length; i++) {
-			// Has location data
-			if (mapObj[0].data[i].location !== null) {
-				// If has hashtag
-				if (mapObj[0].data[i].tags.length > 0 ) {
-					// Cycle through all hashtags
-					for (var l = 0; l < mapObj[0].data[i].tags.length; l++) {
-						// Find if hashtag is #move2012
-						if (mapObj[0].data[i].tags[l] == "move2012") {
-							// Save to array
-							pointsArr.push(mapObj[0].data[i]);
+	Map.prototype.addPoints = function(mapWrapper) {
+		console.log(mapWrapper[0]);
+		if (mapWrapper[0].length) {
+			var maps = mapWrapper[0];
+
+			for (var map in maps) {
+				// Has location data
+				if (maps[map].location !== undefined) {
+					// If has hashtag
+					if (maps[map].tags.length > 0 && this.settings.hashtags.length) {
+						// Cycle through all hashtags
+						for (var tag in maps[map].tags) {
+							// Find desired hashtag
+							if (maps[map].tags[tag] === this.settings.hashtags) {
+								// Save to array
+								this.pointsArr.push(maps[map]);
+							}
 						}
 					}
 				}
 			}
+
+			this.addPointsToMap();
 		}
 	};
 
 	/**
 	 * Add the points to a map
 	 */
-	Map.prototype.addPointsToMap = function(mapObj1, mapObj2) {
-		// Add the points to a single array
-		addPoints(mapObj1);
-		addPoints(mapObj2);
-		
+	Map.prototype.addPointsToMap = function() {
 		// Create points for each element in object
-		for(var j = 0; j < pointsArr.length; j++) {
+		for(var j = 0; j < this.pointsArr.length; j++) {
 			// Create location from lat and lng
-			var location = new google.maps.LatLng(pointsArr[j].location.latitude, pointsArr[j].location.longitude);
+			var location = new google.maps.LatLng(this.pointsArr[j].location.latitude, this.pointsArr[j].location.longitude);
 	
 			// Add to bounds
-			bounds.extend(location);
+			this.bounds.extend(location);
 			
 			// Create our "tiny" marker icon
 			var mapIcon = "http://www.google.com/intl/en_us/mapfiles/ms/micons/purple-dot.png";
 			
 			var locMarker = new google.maps.Marker({
-				map: map,
+				map: this.map,
 				position: location,
 				icon: mapIcon
 			});
 	
 			// Add to array
-			markersArray.push(locMarker);
+			this.markersArray.push(locMarker);
 	
 			// Add infowindow
-			listenMarker(pointsArr[j], locMarker);
+			this.listenMarker(this.pointsArr[j], locMarker);
 		}
 		
 		// Fix zoom to include all points
-		map.fitBounds(bounds);
+		this.map.fitBounds(this.bounds);
 	};
 
 	/**
 	 * Infowindow
 	 */
 	Map.prototype.listenMarker = function(mapObj, marker) {
+		// Get location name
+		var locationString = '';
+		
+		if (mapObj.location.name !== undefined) {
+			locationString = mapObj.location.name;
+		}
+
 		// Get image (medium)
-		var addressString = "<img class='ktn-map-img' src='" + mapObj.images.low_resolution.url + "' alt=''/>",
+		var addressString = '<img class="ktn-map-img" src="' + mapObj.images.low_resolution.url + '" alt="' + locationString + '"/>',
 		
 			// Parse date information
 			date = new Date(mapObj.created_time * 1000),
@@ -304,20 +304,13 @@
 			minutes = date.getMinutes(),
 		
 			// Create date string
-			dateString = (month + 1) + "/" + day + "/" + year + " " + hours + ":" + minutes + "hrs",
+			dateString = (month + 1) + '/' + day + '/' + year + ' ' + hours + ':' + minutes + 'hrs',
 		
 			// Get caption
-			captionString = "";
+			captionString = '';
 		
 		if (mapObj.caption !== null) {
 			captionString = mapObj.caption.text;
-		}
-		
-		// Get location name
-		var locationString = "";
-		
-		if (mapObj.location.name !== null) {
-			locationString = mapObj.location.name;
 		}
 		
 		// Infowindow HTML
@@ -325,8 +318,14 @@
 		
 		// Create infowindow
 		google.maps.event.addListener(marker, 'click', function() {
-			infowindow.setContent(imgString);
-			infowindow.open(map, marker);
+			// Close infowindow if one is open
+			if (this.infowindow) {
+				this.infowindow.close();
+			}
+			// Set infowindow
+			this.infowindow = new google.maps.InfoWindow();
+			this.infowindow.setContent(imgString);
+			this.infowindow.open(this.map, marker);
 		});
 	};
 	
