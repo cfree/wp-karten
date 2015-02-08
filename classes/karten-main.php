@@ -18,6 +18,7 @@ class KartenMain {
 		add_action( 'admin_print_scripts-post-new.php', array( $this, 'ktn_admin_edit_scripts' ), 11 );
 		add_action( 'admin_print_styles-post.php', array( $this, 'ktn_admin_edit_styles' ), 11);
 		add_action( 'admin_print_styles-post-new.php', array( $this, 'ktn_admin_edit_styles' ), 11 );
+		add_action( 'ktn_show_map', array( $this, 'ktn_map' ), 10, 1 );
 
 		// Shortcodes
 		add_shortcode( 'karten', array( $this, 'ktn_show_map_shortcode_handler' ) );
@@ -76,13 +77,18 @@ class KartenMain {
 	 */
 	public function ktn_enqueue_assets( $id ) {
 		// Stylesheets
-		wp_enqueue_style( 'ktn_style', plugins_url( '/assets/css/style.css', dirname( __FILE__ ) ), array(), KTN_THEME_VER );
+		if ( ! wp_script_is( 'ktn_scripts', 'enqueued' ) ) {
+			wp_enqueue_style( 'ktn_style', plugins_url( '/assets/css/style.css', dirname( __FILE__ ) ), array(), KTN_THEME_VER );
+		}
 
 		// Build API queries
 		if ( $params = $this::ktn_query_params( $id ) ) {
 			// Scripts
-			wp_enqueue_script( 'ktn_google_maps', '//maps.googleapis.com/maps/api/js?key=' . KARTEN_GMAPS_API_KEY, array(), KTN_THEME_VER, false );
-			wp_register_script( 'ktn_scripts', plugins_url( '/assets/js/scripts.js', dirname( __FILE__ ) ), array( 'jquery', 'ktn_google_maps' ), KTN_THEME_VER, true );
+			if ( ! wp_script_is( 'ktn_scripts', 'enqueued' ) ) {
+				wp_enqueue_script( 'ktn_google_maps', '//maps.googleapis.com/maps/api/js?key=' . KARTEN_GMAPS_API_KEY, array(), KTN_THEME_VER, false );
+				wp_register_script( 'ktn_scripts', plugins_url( '/assets/js/scripts.js', dirname( __FILE__ ) ), array( 'jquery', 'ktn_google_maps' ), KTN_THEME_VER, true );
+			}
+
 			wp_localize_script( 'ktn_scripts', 'KartenData' . $id, $params );
 			wp_enqueue_script( 'ktn_scripts' );
 		}
@@ -154,22 +160,25 @@ class KartenMain {
 	}
 
 	/**
-	 * Template tag to display a map
+	 * Template action hook to display a map
 	 **/
 	public function ktn_map( $id ) {
 		echo $this::ktn_get_map( $id );
 	}
 
 	/**
-	 * Template tag to return a map
+	 * Retrieve a map
 	 **/
-	public function ktn_get_map( $id, $content = null ) {
+	public function ktn_get_map( $id ) {
 		// Is the ID numeric? Check for on page meta, options
-		if ( is_numeric( $id ) && KartenSetup::ktn_get_opts() ) {
+		if ( ! empty( $id ) && is_numeric( $id ) && KartenSetup::ktn_get_opts() ) {
 			$this::ktn_enqueue_assets( $id );
 
 			// Return map wrapper
 			return '<div class="ktn-wrapper"><div class="ktn-map-canvas" data-ktn-id="' . esc_attr( $id ) . '"></div></div><!-- Karten map -->';
+		}
+		else {
+			return '';
 		}
 	}
 }
