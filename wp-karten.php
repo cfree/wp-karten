@@ -4,13 +4,13 @@ defined('ABSPATH') or die();
 
 /**
  * @package Karten
- * @version 0.1.0
+ * @version 1.0.0
  */
 
 /*
 Plugin Name: Karten
 Description: Display Instagram photos on a Google Maps map
-Version: 0.1.0
+Version: 1.0.0
 Author: Craig Freeman
 Author URI: http://craigfreeman.net
 License: GPL 2
