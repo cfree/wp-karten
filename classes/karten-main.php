@@ -67,9 +67,8 @@ class KartenMain {
 			return;
 		}
 		
-		// Enqueue admin-edit.css on map custom post type editor page
+		// Enqueue jQuery UI on map custom post type editor page
 		wp_enqueue_style( 'jquery-ui', plugins_url( 'assets/css/jquery-ui/jquery-ui.theme.css' , dirname( __FILE__ ) ) );
-		wp_enqueue_style( 'karten-admin-edit', plugins_url( 'assets/css/admin-edit.css', dirname( __FILE__ ) ) );
 	}
 
 	/**
