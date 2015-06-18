@@ -445,7 +445,7 @@ class KartenSetup {
 	/**
 	 * Are the admin settings set?
 	 */
-	public function ktn_get_opts() {
+	public static function ktn_get_opts() {
 		if ( defined( 'KARTEN_GMAPS_API_KEY' ) && defined( 'KARTEN_INSTAGRAM_API_KEY' ) ) {
 			return array(
 				'maps' => KARTEN_GMAPS_API_KEY,
