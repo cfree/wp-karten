@@ -1,6 +1,8 @@
 Karten
 ======
 
+![](assets/img/screenshot.png)
+
 A WordPress plugin to plot Instagram posts to a Google Maps maps. This utilizes both the Google Maps v3 API and the Instagram API.
 
 ## Setup
