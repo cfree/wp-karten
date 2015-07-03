@@ -334,17 +334,17 @@ class KartenSetup {
 		<p>
 			<label class="req" for="ktn-meta-hashtags"><?php _e( 'Hashtag <small>(don\'t include #)</small>', 'ktn' ); ?></label>
 			<br />
-			<input size="20" type="text" name="ktn-meta-hashtags" id="ktn-meta-hashtags" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_hashtags', true ) ); ?>" size="30" />
+			<input size="20" type="text" name="ktn-meta-hashtags" id="ktn-meta-hashtags" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_hashtags', true ) ); ?>" />
 		</p>
 		<p>
 			<label class="req" for="ktn-meta-start-date"><?php _e( 'Start Date', 'ktn' ); ?></label>
 			<br />
-			<input size="20" type="text" name="ktn-meta-start-date" id="ktn-meta-start-date" class="ktn-datepicker" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_start_date', true ) ); ?>" size="30" />
+			<input size="20" type="text" name="ktn-meta-start-date" id="ktn-meta-start-date" class="ktn-datepicker" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_start_date', true ) ); ?>" />
 		</p>
 		<p>
 			<label class="req" for="ktn-meta-end-date"><?php _e( 'End Date', 'ktn' ); ?></label>
 			<br />
-			<input size="20" type="text" name="ktn-meta-end-date" id="ktn-meta-end-date" class="ktn-datepicker" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_end_date', true ) ); ?>" size="30" />
+			<input size="20" type="text" name="ktn-meta-end-date" id="ktn-meta-end-date" class="ktn-datepicker" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_end_date', true ) ); ?>" />
 		</p>
 		<p>
 			<label class="req" for="ktn-meta-start-addr"><?php _e( 'Start Address', 'ktn' ); ?></label>
@@ -359,7 +359,7 @@ class KartenSetup {
 		<p>
 			<label class="req" for="ktn-meta-max-posts"><?php _e( 'Maximum Number of Posts', 'ktn' ); ?></label>
 			<br />
-			<input size="20" type="number" min="0" name="ktn-meta-max-posts" id="ktn-meta-max-posts" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_max_posts', true ) ); ?>" size="10" />
+			<input size="20" style="width: 11em;" type="number" min="0" max="33" name="ktn-meta-max-posts" id="ktn-meta-max-posts" value="<?php echo esc_attr( get_post_meta( $object->ID, 'ktn_meta_max_posts', true ) ); ?>" />
 		</p>
 		<?php 
 	}
