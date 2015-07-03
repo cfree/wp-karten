@@ -173,11 +173,12 @@
 
 		for (var map in maps) {
 			// Has location data?
-			if (maps[map].location !== undefined) {
+			if (maps[map].location) {
 				// Is hashtag needed?
-				if (this.settings.hashtags !== undefined) {
+				if (this.settings.hashtags) {
 					if (maps[map].tags !== undefined && maps[map].tags.length > 0) {
 						var tags = maps[map].tags;
+
 						// Cycle through all hashtags
 						for (var tag in tags) {
 							// Find desired hashtag
@@ -200,6 +201,7 @@
 			return true;
 		}
 		else {
+			console.log('No relevant posts found');
 			return false;
 		}
 	};
@@ -246,24 +248,28 @@
 		var userIdDeffereds = [],
 			scope = this;
 
-		// For each username, retrieve it's ID from Instagram
-		$.each(this.settings.usernames, function(index, name) {
-			name = name.trim();
-			name = name.toLowerCase();
-			var instagramUrl = 'https://api.instagram.com/v1/users/search?q=' + name + '&access_token=' + scope.instagramApiKey + '&count=1';
+		// Are there any usernames?
+		if (scope.settings.usernames) {
 
-			userIdDeffereds.push(
-				$.ajax({
-					url: instagramUrl,
-					dataType: 'jsonp'
-				})
-					.success(function(results) {
-						if (results.data.length > 0) {
-							scope.userIDs[name] = results.data[0].id;
-						}
+			// For each username, retrieve it's ID from Instagram
+			$.each(this.settings.usernames, function(index, name) {
+				name = name.trim();
+				name = name.toLowerCase();
+				var instagramUrl = 'https://api.instagram.com/v1/users/search?q=' + name + '&access_token=' + scope.instagramApiKey + '&count=1';
+
+				userIdDeffereds.push(
+					$.ajax({
+						url: instagramUrl,
+						dataType: 'jsonp'
 					})
-			);
-		});
+						.success(function(results) {
+							if (results.data.length > 0) {
+								scope.userIDs[name] = results.data[0].id;
+							}
+						})
+				);
+			});
+		}
 
 		return(userIdDeffereds);
 	};
@@ -285,13 +291,22 @@
 		}
 
 		// Number of posts
-		if (typeof this.settings.end_date === 'string') {
+		if (typeof this.settings.max_posts === 'string') {
 			queryString += '&count=' + this.settings.max_posts;
 		}
 
 		// Create endpoint URL
-		for (var user in this.settings.usernames) {
-			this.apiUrls.push('https://api.instagram.com/v1/users/' + this.userIDs[this.settings.usernames[user]] + '/media/recent?access_token=' + this.instagramApiKey + queryString);
+		if (this.settings.usernames) {
+			// We have users 
+			for (var user in this.settings.usernames) {
+				this.apiUrls.push('https://api.instagram.com/v1/users/' + this.userIDs[this.settings.usernames[user]] + '/media/recent?access_token=' + this.instagramApiKey + queryString);
+			}
+		} else if(this.settings.hashtags) {
+			// No users set, search for hasthtag
+			this.apiUrls.push('https://api.instagram.com/v1/tags/' + this.settings.hashtags + '/media/recent?access_token=' + this.instagramApiKey + queryString);
+		} else {
+			console.log('No username or hasthtag set.');
+			return;
 		}
 	};
 
